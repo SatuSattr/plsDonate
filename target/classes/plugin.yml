@@ -1,9 +1,0 @@
-name: plsDonate
-version: "1.0"
-main: click.sattr.plsDonate.PlsDonate
-api-version: "1.21"
-commands:
-  plsdonate:
-    description: Main command for plsDonate
-    aliases: [pdn]
-softdepend: [floodgate]
