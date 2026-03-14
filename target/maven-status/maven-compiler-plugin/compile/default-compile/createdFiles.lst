@@ -12,7 +12,6 @@ click\sattr\plsDonate\ExpressionEvaluator.class
 click\sattr\plsDonate\CustomDonateCommand.class
 click\sattr\plsDonate\platform\DonationPlatform$WebhookResult.class
 click\sattr\plsDonate\platform\DonationPlatform$DonationResponse.class
-click\sattr\plsDonate\platform\donet\DonetPlatform.class
 click\sattr\plsDonate\DonateCommand.class
 click\sattr\plsDonate\DatabaseManager.class
 click\sattr\plsDonate\WebhookManager$WebhookHandler.class

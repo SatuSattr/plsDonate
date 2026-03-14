@@ -7,7 +7,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.command.CommandSender;
 import org.bukkit.Bukkit;
-import click.sattr.plsDonate.platform.donet.DonetPlatform;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -126,33 +125,19 @@ public final class PlsDonate extends JavaPlugin {
         Map<String, String> p = new HashMap<>();
         p.put("{PREFIX}", langConfig.getString("prefix", "<gray>[<green>plsDonate<gray>]<reset>"));
 
-        String activePlatform = getConfig().getString("platform.active", "tako").toLowerCase();
+        String takoToken = getConfig().getString("platform.tako.webhook-token", getConfig().getString("webhook.token", ""));
+        if (takoToken.isEmpty() || "your_secret_token_here".equals(takoToken)) {
+            Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Tako.id Webhook Token is not set! (platform.tako.webhook-token)</red>", p));
+        }
 
-        if (activePlatform.equals("tako")) {
-            String takoToken = getConfig().getString("platform.tako.webhook-token", getConfig().getString("webhook.token", ""));
-            if (takoToken.isEmpty() || "your_secret_token_here".equals(takoToken)) {
-                Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Tako.id Webhook Token is not set! (platform.tako.webhook-token)</red>", p));
-            }
+        String takoCreator = getConfig().getString("platform.tako.creator", getConfig().getString("api.creator", ""));
+        if (takoCreator.isEmpty()) {
+            Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Tako.id Creator is empty! (platform.tako.creator)</red>", p));
+        }
 
-            String takoCreator = getConfig().getString("platform.tako.creator", getConfig().getString("api.creator", ""));
-            if (takoCreator.isEmpty()) {
-                Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Tako.id Creator is empty! (platform.tako.creator)</red>", p));
-            }
-
-            String takoKey = getConfig().getString("platform.tako.api-key", getConfig().getString("api.key", ""));
-            if (takoKey.isEmpty() || "your_secret_api_key_here".equals(takoKey)) {
-                Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Tako.id API Key is empty! (platform.tako.api-key)</red>", p));
-            }
-        } else if (activePlatform.equals("donet")) {
-            String donetToken = getConfig().getString("platform.donet.webhook-token", "");
-            if (donetToken.isEmpty() || "your_secret_token_here".equals(donetToken)) {
-                Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Donet.co Webhook Token is not set! (platform.donet.webhook-token)</red>", p));
-            }
-
-            String donetCreator = getConfig().getString("platform.donet.creator", "");
-            if (donetCreator.isEmpty()) {
-                Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Donet.co Creator is empty! (platform.donet.creator)</red>", p));
-            }
+        String takoKey = getConfig().getString("platform.tako.api-key", getConfig().getString("api.key", ""));
+        if (takoKey.isEmpty() || "your_secret_api_key_here".equals(takoKey)) {
+            Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Tako.id API Key is empty! (platform.tako.api-key)</red>", p));
         }
 
         if (getConfig().getBoolean("bedrock-support", false)) {
@@ -381,13 +366,7 @@ public final class PlsDonate extends JavaPlugin {
     }
 
     public void loadActivePlatform() {
-        String activePlatform = getConfig().getString("platform.active", "tako").toLowerCase();
-        if (activePlatform.equals("donet")) {
-            donationPlatform = new DonetPlatform(this);
-            getLogger().info("Donation Platform: Donet.co Enabled");
-        } else {
-            donationPlatform = new TakoPlatform(this);
-            getLogger().info("Donation Platform: Tako.id Enabled");
-        }
+        donationPlatform = new TakoPlatform(this);
+        getLogger().info("Donation Platform: Tako.id Enabled (Express Version)");
     }
 }

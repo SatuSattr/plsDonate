@@ -112,38 +112,7 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Fallback matching for URL-parameter platforms like Donet.co that do not
-     * generate a persistent transactionId upfront. Finds a pending donation by Exact Name, Amount, and Message.
-     */
-    public synchronized boolean updateDonationByExactMatch(String name, double amount, String message, String newTransactionId) {
-        if (connection == null) return false;
-        String selectSql = "SELECT transactionId FROM donations WHERE status = 'pending' AND player = ? AND amount = ? AND message = ? LIMIT 1";
-        String updateSql = "UPDATE donations SET status = 'paid', transactionId = ? WHERE transactionId = ?";
 
-        try (PreparedStatement selectStmt = connection.prepareStatement(selectSql)) {
-            selectStmt.setString(1, name);
-            selectStmt.setDouble(2, amount);
-            selectStmt.setString(3, message != null ? message : "");
-            
-            try (ResultSet rs = selectStmt.executeQuery()) {
-                if (rs.next()) {
-                    String oldTrackingId = rs.getString("transactionId");
-                    
-                    try (PreparedStatement updateStmt = connection.prepareStatement(updateSql)) {
-                        updateStmt.setString(1, newTransactionId);
-                        updateStmt.setString(2, oldTrackingId);
-                        int affected = updateStmt.executeUpdate();
-                        return affected > 0;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().severe("Failed to update donation by exact match: " + e.getMessage());
-            e.printStackTrace();
-        }
-        return false;
-    }
 
     public synchronized DonationRecord getDonationRecord(String transactionId) {
         if (connection == null) return null;
