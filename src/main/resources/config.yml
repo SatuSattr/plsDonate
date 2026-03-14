@@ -1,0 +1,130 @@
+# plsDonate default configuration
+
+# Whether or not the plugin logic should be executed
+enabled: true
+
+# The language file to use inside the 'lang' folder (without .yml).
+# Available languages: en-US
+language: "en-US"
+
+# Donation Platform Selection
+# Specifies which provider to use for generating payment links.
+# Available: "tako", "donet"
+platform:
+  active: "tako"
+
+  # Tako.id API Integration
+  tako:
+    # Your creator name on tako.id.
+    creator: ""
+
+    # Your private API key from the tako.id creator dashboard.
+    api-key: "your_secret_api_key_here"
+
+    # Secret token used to verify incoming webhooks from tako.id.
+    webhook-token: "your_secret_token_here"
+
+  # Donet.co Integration (URL Parameter-based)
+  donet:
+    # Your creator username on donet.co
+    creator: "Malik"
+
+    # The Bearer Token to verify incoming webhooks from donet.co
+    webhook-token: "your_bearer_token_here"
+
+# Webhook Listener Configuration
+webhook:
+  # Port number where the webhook listens. It can be anything from 0-65535.
+  # Ensure this port is open in your firewall and/or server panel.
+  port: 21172
+
+  # The URL path for the webhook. (e.g., http://your-ip:port/plsdonate)
+  path: "plsdonate"
+
+# Main Donation Command Settings
+donate:
+  # The base command used for donations (e.g., /donate).
+  # You can rename this to /donasi, /gift, etc. via this config.
+  command: "donate"
+
+  amount:
+    # Minimum amount a player can donate per request.
+    min: 1000
+    # Maximum amount a player can donate per request.
+    max: 10000000
+
+  # Character limit for the optional donation message.
+  message:
+    max-length: 100
+
+  # Global notification settings
+  notification: true
+
+  # Requires the player to click a "Yes" button before processing the donation
+  confirmation: true
+
+# Triggers System
+triggers:
+  # Enable or disable the ente triggers system globally
+  enabled: true
+
+# Bedrock Support (Requires GeyserMC and Floodgate on your server)
+bedrock-support: false
+
+# Advanced SMTP Email System (Used to send clickable payment links to Bedrock players)
+email:
+  # The default HTML email template in the 'templates' folder
+  template: "payment.html"
+
+  # Name displayed as the sender in the user's inbox
+  from-name: "plsDonate"
+  subject: "Your Donation Payment Link - plsDonate"
+
+  # Fallback SMTP System
+  # The plugin will attempt to use '1'. If it fails, it will attempt to fallback to '2', and so on.
+  # If 'from' is omitted/blank, the plugin will automatically use the login 'user' email.
+  hosts:
+    "1":
+      host: "smtp.gmail.com"
+      port: 587
+      user: "email@gmail.com"
+      pass: "your-app-password"
+      secure: false
+
+      from:
+        name: "plsDonate"
+        # Optional: Put your custom routing email here!
+        email: ""
+
+    # Example Fallback Host
+    # "2":
+    #   host: "smtp.mailgun.org"
+    #   port: 587
+    #   user: "postmaster@yourdomain.com"
+    #   pass: "mailgun_password_here"
+    #   secure: false
+    #   from:
+    #     name: "plsDonate"
+    #     email: ""
+
+# Audio feedback for donation stages.
+# Format: "sound_name,pitch,volume" (e.g., "entity.experience_orb.pickup,1.2,1.0")
+sound-effects:
+  # Sounds played when the player is first prompted to confirm their donation.
+  donation-confirmation:
+    - "minecraft:ui.hud.bubble_pop,1,1"
+    - "minecraft:block.note_block.hat,0.8,1"
+
+  # Sounds played when [Yes] is clicked and the request is being sent to the API.
+  donation-processed:
+    - ""
+
+  # Sounds played when the payment link is successfully shown in chat.
+  donation-success:
+    - "minecraft:ui.hud.bubble_pop,1,1"
+    - "minecraft:item.bundle.remove_one,1,1"
+
+  # Sounds played to all online players when a donation is successfully received.
+  donation-received:
+    - "minecraft:entity.player.levelup,1,1"
+    - "minecraft:entity.experience_orb.pickup,1,1"
