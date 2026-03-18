@@ -6,4 +6,6 @@ commands:
   plsdonate:
     description: Main command for plsDonate
     aliases: [pdn]
+  donate:
+    description: Main donation command
 softdepend: [floodgate]

@@ -1,15 +1,14 @@
 package click.sattr.plsDonate;
 
-import click.sattr.plsDonate.platform.DonationPlatform;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -27,7 +26,7 @@ public class EmailManager {
         // No persistent sessions anymore; handled per request.
     }
 
-    public void sendPaymentEmail(String player, String emailAddress, double amount, String formattedAmount, String link, String messageParam) {
+    public void sendPaymentEmail(String player, String emailAddress, double amount, String formattedAmount, String methodParam, String link, String messageParam) {
         ConfigurationSection hostsSection = plugin.getConfig().getConfigurationSection("email.hosts");
         if (hostsSection == null || hostsSection.getKeys(false).isEmpty()) {
             plugin.getLogger().warning("Email hosts not configured in config.yml! Cannot send email to " + player);
@@ -53,7 +52,7 @@ public class EmailManager {
                 }
 
                 try {
-                    sendUsingHost(hostConfig, emailAddress, player, amount, formattedAmount, link, subject, messageParam);
+                    sendUsingHost(hostConfig, emailAddress, player, amount, formattedAmount, methodParam, link, subject, messageParam);
                     plugin.getLogger().info("Successfully sent payment email to " + emailAddress + " for player " + player + " using host " + key);
                     return; // Success, exit loop
                 } catch (Exception e) {
@@ -79,7 +78,7 @@ public class EmailManager {
         });
     }
 
-    private void sendUsingHost(ConfigurationSection hostConfig, String toAddress, String player, double amount, String formattedAmount, String link, String subject, String messageParam) throws Exception {
+    private void sendUsingHost(ConfigurationSection hostConfig, String toAddress, String player, double amount, String formattedAmount, String method, String link, String subject, String messageParam) throws Exception {
         String host = hostConfig.getString("host", "");
         int port = hostConfig.getInt("port", 587);
         String username = hostConfig.getString("user", "");
@@ -126,17 +125,22 @@ public class EmailManager {
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toAddress));
         message.setSubject(subject);
 
-        // Load and format HTML
+        // Load and format HTML from classpath resource (bundled in JAR)
         String htmlContent = loadTemplate();
-        DonationPlatform platform = plugin.getDonationPlatform();
+        String methodDisplay = method.equalsIgnoreCase("gopay") ? "GoPay" : 
+                               method.equalsIgnoreCase("paypal") ? "PayPal" : 
+                               method.toUpperCase(); // default for QRIS or others
+
         htmlContent = htmlContent.replace("{PLAYER}", player)
+                                 .replace("{PLAYER_UPPERCASED}", player.toUpperCase())
+                                 .replace("{PLAYER_LOWERCASED}", player.toLowerCase())
                                  .replace("{AMOUNT}", String.valueOf((long) amount))
                                  .replace("{AMOUNT_FORMATTED}", formattedAmount)
+                                 .replace("{METHOD}", methodDisplay)
+                                 .replace("{METHOD_LOWERCASED}", methodDisplay.toLowerCase())
+                                 .replace("{METHOD_UPPERCASED}", methodDisplay.toUpperCase())
                                  .replace("{LINK}", link)
-                                 .replace("{MESSAGE}", messageParam != null && !messageParam.isEmpty() ? messageParam : "-")
-
-                                 .replace("{PLATFORM_NAME}", platform.getPlatformName())
-                                 .replace("{PLATFORM_URL}", platform.getPlatformUrl());
+                                 .replace("{MESSAGE}", messageParam != null && !messageParam.isEmpty() ? messageParam : "-");
 
         message.setContent(htmlContent, "text/html; charset=utf-8");
 
@@ -144,12 +148,17 @@ public class EmailManager {
     }
 
     private String loadTemplate() throws IOException {
-        String templateName = plugin.getConfig().getString("email.template", "payment.html");
-        File templateFile = new File(plugin.getDataFolder(), "templates/" + templateName);
-        if (!templateFile.exists()) {
-            return "<p>Hi <b>{PLAYER}</b>,</p><p>Please pay <b>Rp{AMOUNT_FORMATTED}</b> here: <a href=\"{LINK}\">{LINK}</a></p>";
+        String customTemplate = plugin.getConfig().getString("email.body-template", "");
+        if (customTemplate != null && !customTemplate.trim().isEmpty()) {
+            return customTemplate;
         }
-        return new String(Files.readAllBytes(templateFile.toPath()));
+
+        try (InputStream is = getClass().getResourceAsStream("/templates/payment.html")) {
+            if (is == null) {
+                return "<p>Hi <b>{PLAYER}</b>,</p><p>Please pay <b>Rp{AMOUNT_FORMATTED}</b> here: <a href=\"{LINK}\">{LINK}</a></p>";
+            }
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
 
     private int parseIntSafely(String val) {

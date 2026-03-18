@@ -37,19 +37,7 @@ public class TakoPlatform implements DonationPlatform {
 
     @Override
     public int getMaxMessageLength() {
-        return 150;
-    }
-
-
-
-    @Override
-    public String getPlatformName() {
-        return "Tako.id";
-    }
-
-    @Override
-    public String getPlatformUrl() {
-        return "https://tako.id/";
+        return 190;
     }
 
     @Override

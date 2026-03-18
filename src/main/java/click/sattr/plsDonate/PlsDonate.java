@@ -12,6 +12,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import click.sattr.plsDonate.platform.DonationPlatform;
 import click.sattr.plsDonate.platform.tako.TakoPlatform;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,18 +25,20 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public final class PlsDonate extends JavaPlugin {
+public final class PlsDonate extends JavaPlugin implements Listener {
 
     private FileConfiguration langConfig;
     private WebhookManager webhookManager;
-    private DatabaseManager databaseManager;
+    private StorageManager storageManager;
     private DonationPlatform donationPlatform;
     private TriggersManager triggersManager;
     private EmailManager emailManager;
     private BedrockFormHandler bedrockFormHandler;
+    private DonateCommand donateCommand;
+    private plsDonateCommand pdnCommand;
 
     // Getters for subsystems
-    public DatabaseManager getDatabaseManager() { return databaseManager; }
+    public StorageManager getStorageManager() { return storageManager; }
     public DonationPlatform getDonationPlatform() { return donationPlatform; }
     public FileConfiguration getLangConfig() { return langConfig; }
     public TriggersManager getTriggersManager() { return triggersManager; }
@@ -44,10 +49,6 @@ public final class PlsDonate extends JavaPlugin {
         saveDefaultConfig();
         if (!new File(getDataFolder(), "lang/en-US.yml").exists()) {
             saveResource("lang/en-US.yml", false);
-        }
-        
-        if (!new File(getDataFolder(), "templates/payment.html").exists()) {
-            saveResource("templates/payment.html", false);
         }
 
         File configFile = new File(getDataFolder(), "config.yml");
@@ -62,26 +63,21 @@ public final class PlsDonate extends JavaPlugin {
         
         loadLanguageConfig();
 
-        // Initialize SQLite Database
-        databaseManager = new DatabaseManager(this);
-        if (!databaseManager.connect()) {
-            getLogger().severe("Disabling plugin due to Database connection failure!");
-            getServer().getPluginManager().disablePlugin(this);
-            return;
-        }
+        // Initialize Storage Manager
+        storageManager = new StorageManager(this);
         
         // Initialize Triggers Manager
         triggersManager = new TriggersManager(this);
 
-        // Register Dynamic Donate Command
-        try {
-            String alias = getConfig().getString("donate.command", "donate");
-            getServer().getCommandMap().register("plsdonate", new CustomDonateCommand(alias, this));
-            getLogger().info("Registered custom donation command: /" + alias);
-        } catch (Exception e) {
-            getLogger().severe("Failed to register custom donate command!");
-            e.printStackTrace();
-        }
+        // Register Donate Command
+        donateCommand = new DonateCommand(this);
+        getCommand("donate").setExecutor(donateCommand);
+        getCommand("donate").setTabCompleter(donateCommand);
+
+        pdnCommand = new plsDonateCommand(this);
+        getCommand("plsdonate").setExecutor(pdnCommand);
+        
+        getServer().getPluginManager().registerEvents(this, this);
 
         loadActivePlatform();
         
@@ -108,7 +104,8 @@ public final class PlsDonate extends JavaPlugin {
             return;
         }
 
-        getCommand("plsdonate").setExecutor(new DonateCommand(this));
+        // Empty replacement as it was moved up
+        ;
 
         // Delayed startup message to appear after "Done!"
         Bukkit.getScheduler().runTask(this, () -> {
@@ -140,24 +137,23 @@ public final class PlsDonate extends JavaPlugin {
             Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Tako.id API Key is empty! (platform.tako.api-key)</red>", p));
         }
 
-        if (getConfig().getBoolean("bedrock-support", false)) {
-            org.bukkit.configuration.ConfigurationSection hosts = getConfig().getConfigurationSection("email.hosts");
-            if (hosts == null || hosts.getKeys(false).isEmpty()) {
-                Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Bedrock Support is enabled, but 'email.hosts' is missing/empty in config.yml!</red>", p));
-            } else {
-                boolean hasValidHost = false;
-                for (String hostKey : hosts.getKeys(false)) {
-                    String user = getConfig().getString("email.hosts." + hostKey + ".user", "");
-                    String host = getConfig().getString("email.hosts." + hostKey + ".host", "");
-                    if (!user.isEmpty() && !host.isEmpty() && !"email@gmail.com".equalsIgnoreCase(user)) {
-                        hasValidHost = true;
-                        break;
-                    }
+        // Email is now required for ALL players (Java & Bedrock)
+        org.bukkit.configuration.ConfigurationSection hosts = getConfig().getConfigurationSection("email.hosts");
+        if (hosts == null || hosts.getKeys(false).isEmpty()) {
+            Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] 'email.hosts' is missing/empty in config.yml! Payment emails will not be sent.</red>", p));
+        } else {
+            boolean hasValidHost = false;
+            for (String hostKey : hosts.getKeys(false)) {
+                String user = getConfig().getString("email.hosts." + hostKey + ".user", "");
+                String host = getConfig().getString("email.hosts." + hostKey + ".host", "");
+                if (!user.isEmpty() && !host.isEmpty() && !"email@gmail.com".equalsIgnoreCase(user)) {
+                    hasValidHost = true;
+                    break;
                 }
-                if (!hasValidHost) {
-                    Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Bedrock Support is enabled, but all SMTP hosts are using default/blank credentials!</red>", p));
-                }
-            } 
+            }
+            if (!hasValidHost) {
+                Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] All SMTP hosts are using default/blank credentials! Payment emails will not work.</red>", p));
+            }
         }
     }
 
@@ -187,9 +183,6 @@ public final class PlsDonate extends JavaPlugin {
     public void onDisable() {
         if (webhookManager != null) {
             webhookManager.stop();
-        }
-        if (databaseManager != null) {
-            databaseManager.close();
         }
     }
 
@@ -368,5 +361,51 @@ public final class PlsDonate extends JavaPlugin {
     public void loadActivePlatform() {
         donationPlatform = new TakoPlatform(this);
         getLogger().info("Donation Platform: Tako.id Enabled (Express Version)");
+    }
+    public Map<String, String> getDonationPlaceholders(String donorName, double amount, String email, String method, String message) {
+        Map<String, String> p = new HashMap<>();
+        p.put("{PLAYER}", donorName);
+        p.put("{PLAYER_UPPERCASED}", donorName.toUpperCase());
+        p.put("{PLAYER_LOWERCASED}", donorName.toLowerCase());
+        p.put("{AMOUNT}", String.valueOf((long) amount));
+        p.put("{AMOUNT_FORMATTED}", formatIndonesianNumber(amount));
+        p.put("{EMAIL}", email != null ? email : "");
+        
+        String msg = (message == null || message.isEmpty()) ? "No message" : message;
+        p.put("{MESSAGE}", msg);
+        p.put("{MESSAGE_LOWERCASED}", msg.toLowerCase());
+        p.put("{MESSAGE_UPPERCASED}", msg.toUpperCase());
+
+        String baseLabel = "QRIS";
+        String colorCode = "#ED1A3D";
+        if (method != null) {
+            String m = method.toLowerCase();
+            if (m.equals("gopay")) { baseLabel = "GoPay"; colorCode = "#01AED6"; }
+            else if (m.equals("paypal")) { baseLabel = "PayPal"; colorCode = "#195ef7"; }
+        }
+
+        p.put("{METHOD}", baseLabel);
+        p.put("{METHOD_LOWERCASED}", baseLabel.toLowerCase());
+        p.put("{METHOD_UPPERCASED}", baseLabel.toUpperCase());
+        
+        String colored = "<" + colorCode + ">" + baseLabel + "</" + colorCode + ">";
+        String coloredLower = "<" + colorCode + ">" + baseLabel.toLowerCase() + "</" + colorCode + ">";
+        String coloredUpper = "<" + colorCode + ">" + baseLabel.toUpperCase() + "</" + colorCode + ">";
+        
+        p.put("{METHOD_COLORED}", colored);
+        p.put("{METHOD_COLORED_LOWERCASED}", coloredLower);
+        p.put("{METHOD_COLORED_UPPERCASED}", coloredUpper);
+        
+        return p;
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        if (donateCommand != null) {
+            donateCommand.clearPendingRequests(event.getPlayer().getUniqueId());
+        }
+        if (pdnCommand != null) {
+            pdnCommand.clearPendingRequests(event.getPlayer().getUniqueId());
+        }
     }
 }

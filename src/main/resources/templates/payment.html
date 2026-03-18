@@ -37,17 +37,19 @@
       width="100%"
       cellpadding="0"
       cellspacing="0"
-      style="padding: 30px 0"
+      border="0"
+      style="padding: 40px 0"
     >
       <tr>
-        <td align="center" style="padding: 0px 0px">
+        <td align="center" style="padding: 0 10px">
           <!-- Container -->
           <table
             role="presentation"
-            width="460"
+            width="100%"
             cellpadding="0"
             cellspacing="0"
-            style="width: 450px; max-width: 600px"
+            border="0"
+            style="width: 100%; max-width: 440px"
           >
             <tr>
               <td
@@ -57,19 +59,21 @@
                   border-radius: 16px;
                   overflow: hidden;
                 "
+                align="center"
               >
                 <table
                   role="presentation"
                   width="100%"
                   cellpadding="0"
                   cellspacing="0"
+                  border="0"
                 >
                   <tr>
-                    <td style="padding: 26px">
+                    <td style="padding: 32px 24px; text-align: center">
                       <h2
                         style="
-                          margin: 0 0 12px 0;
-                          font-size: 20px;
+                          margin: 0 0 16px 0;
+                          font-size: 22px;
                           font-weight: 700;
                           color: #111827;
                         "
@@ -81,8 +85,8 @@
                         style="
                           font-size: 15px;
                           line-height: 1.6;
-                          margin-bottom: 20px;
-                          color: #374151;
+                          margin-bottom: 24px;
+                          color: #4b5563;
                         "
                       >
                         Hi
@@ -91,11 +95,13 @@
                         support means everything to us!
                       </div>
 
+                      <!-- Detail Box -->
                       <table
                         role="presentation"
                         width="100%"
                         cellpadding="0"
                         cellspacing="0"
+                        border="0"
                         style="
                           border: 1px solid #e5e7eb;
                           border-radius: 12px;
@@ -103,27 +109,33 @@
                         "
                       >
                         <tr>
-                          <td style="padding: 18px">
+                          <td style="padding: 20px">
                             <table
                               role="presentation"
                               width="100%"
                               cellpadding="0"
                               cellspacing="0"
+                              border="0"
                               style="font-size: 15px; color: #374151"
                             >
                               <tr>
                                 <td
-                                  style="padding-bottom: 4px; font-weight: bold"
+                                  style="
+                                    padding-bottom: 12px;
+                                    font-weight: bold;
+                                    text-align: left;
+                                  "
                                 >
-                                  Amount:
+                                  Amount
                                 </td>
                                 <td
                                   align="right"
                                   style="
-                                    padding-bottom: 4px;
+                                    padding-bottom: 12px;
                                     font-weight: bold;
                                     color: #0b0b0b;
                                     font-size: 18px;
+                                    text-align: right;
                                   "
                                 >
                                   Rp{AMOUNT_FORMATTED}
@@ -132,19 +144,55 @@
                               <tr>
                                 <td
                                   style="
-                                    padding-top: 8px;
+                                    padding-bottom: 12px;
                                     font-weight: bold;
-                                    vertical-align: top;
+                                    text-align: left;
                                   "
                                 >
-                                  Message:
+                                  Method
                                 </td>
                                 <td
                                   align="right"
                                   style="
-                                    padding-top: 8px;
+                                    padding-bottom: 12px;
+                                    font-weight: bold;
+                                    color: #0b0b0b;
+                                    font-size: 15px;
+                                    text-align: right;
+                                  "
+                                >
+                                  {METHOD}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td
+                                  colspan="2"
+                                  style="
+                                    border-top: 1px solid #e5e7eb;
+                                    padding-top: 12px;
+                                  "
+                                ></td>
+                              </tr>
+                              <tr>
+                                <td
+                                  style="
+                                    font-weight: bold;
+                                    vertical-align: top;
+                                    text-align: left;
+                                  "
+                                >
+                                  Message
+                                </td>
+                              </tr>
+                              <tr>
+                                <td
+                                  colspan="2"
+                                  style="
+                                    padding-top: 6px;
                                     color: #4b5563;
                                     vertical-align: top;
+                                    text-align: left;
+                                    font-style: italic;
                                   "
                                 >
                                   {MESSAGE}
@@ -155,13 +203,14 @@
                         </tr>
                       </table>
 
-                      <!-- Payment Button -->
+                      <!-- Payment Button Area -->
                       <table
                         role="presentation"
                         width="100%"
                         cellpadding="0"
                         cellspacing="0"
-                        style="margin-top: 24px"
+                        border="0"
+                        style="margin-top: 28px"
                       >
                         <tr>
                           <td align="center">
@@ -173,12 +222,12 @@
                               "
                             >
                               <img
-                                src="https://i.imgur.com/QfTQLgL.png"
-                                alt="Continue with {PLATFORM_NAME}"
-                                width="250"
+                                src="https://i.imgur.com/vjS4Qvt.png"
+                                alt="Continue with Tako"
+                                width="220"
                                 style="
                                   display: block;
-                                  width: 200px;
+                                  width: 220px;
                                   max-width: 100%;
                                   border: 0;
                                   outline: none;
@@ -187,7 +236,7 @@
                             </a>
                             <div
                               style="
-                                margin-top: 16px;
+                                margin-top: 20px;
                                 font-size: 12px;
                                 color: #6b7280;
                                 line-height: 1.6;
@@ -217,7 +266,7 @@
             <tr>
               <td
                 style="
-                  padding: 16px;
+                  padding: 24px 16px;
                   text-align: center;
                   font-size: 12px;
                   color: #9ca3af;
@@ -226,12 +275,13 @@
               >
                 <strong>Disclaimer:</strong> Transactions safely handled by
                 <a
-                  href="{PLATFORM_URL}"
+                  href="https://tako.id/"
                   target="_blank"
                   style="color: #3ba1ec; text-decoration: underline"
-                  >{PLATFORM_NAME}</a
+                  >Tako</a
                 ><br />
-                If you didn't initiate this, please ignore. © 2026 plsDonate
+                If you didn't initiate this, please ignore. &copy; 2026
+                plsDonate
               </td>
             </tr>
           </table>

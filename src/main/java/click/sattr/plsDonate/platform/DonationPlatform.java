@@ -32,18 +32,6 @@ public interface DonationPlatform {
      */
     int getMaxMessageLength();
 
-
-
-    /**
-     * @return Human-readable platform name (e.g. "Tako.id", "Donet.co").
-     */
-    String getPlatformName();
-
-    /**
-     * @return The platform's homepage URL for footer disclaimers.
-     */
-    String getPlatformUrl();
-
     record DonationResponse(boolean success, String message, String transactionId, String paymentUrl) {}
 
     record WebhookResult(

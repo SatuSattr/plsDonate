@@ -74,7 +74,7 @@ public class TriggersManager implements Listener {
                     processedCommand = evaluateMathBlocks(processedCommand);
 
                     if (requireOnline && !isOnline) {
-                        plugin.getDatabaseManager().insertOfflineTrigger(donorName, processedCommand);
+                        plugin.getStorageManager().insertOfflineTrigger(donorName, processedCommand);
                         plugin.getLogger().info("Saved offline trigger command for " + donorName + " (Waiting for login).");
                     } else {
                         executeCommand(processedCommand);
@@ -131,7 +131,7 @@ public class TriggersManager implements Listener {
 
         Player player = event.getPlayer();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            List<String> offlineCommands = plugin.getDatabaseManager().getAndRemoveOfflineTriggers(player.getName());
+            List<String> offlineCommands = plugin.getStorageManager().getAndRemoveOfflineTriggers(player.getName());
             if (!offlineCommands.isEmpty()) {
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     for (String command : offlineCommands) {

@@ -1,0 +1,50 @@
+# plsDonate-Express - Instructional Context
+
+This file serves as the foundational mandate for all AI interactions within the `plsDonate-Express` project. It outlines the project's architecture, technologies, and development standards.
+
+## Project Overview
+`plsDonate-Express` is a high-performance, specialized Minecraft server plugin (for Paper/Spigot) designed to automate real-money donations and fulfillment. 
+
+### Core Features
+*   **Payment Integration**: Native integration with the **Tako.id** platform (QRIS, GoPay, PayPal).
+*   **Webhook Listener**: Built-in HTTP server (default port `21172`) to receive real-time payment confirmations.
+*   **Automated Triggers**: Robust system to execute console commands based on donation amount, message, or payment method, including support for math expressions (e.g., `{math: floor({amount} / 1000)}`).
+*   **Offline Rewards**: Persistent storage (`offline_triggers.yml`) ensures rewards are delivered even if a player is offline during the donation.
+*   **Bedrock Support**: Native UI support for Bedrock Edition players via Geyser/Floodgate.
+*   **Email System**: SMTP-based email dispatching for sending payment links to players.
+
+## Technical Architecture
+The plugin follows a modular, manager-based architecture:
+*   **`PlsDonate`**: Central orchestrator and plugin entry point.
+*   **`StorageManager`**: Manages YAML-based persistence for offline rewards.
+*   **`WebhookManager`**: Handles the internal HTTP server and webhook verification (HmacSHA256).
+*   **`TriggersManager`**: Parses and executes rewards defined in `triggers.yml`.
+*   **`TakoPlatform`**: Implements the `DonationPlatform` interface for API communication.
+*   **`EmailManager`**: Handles SMTP communication for transactional emails.
+
+## Technology Stack
+*   **Language**: Java 21
+*   **API**: Paper API (1.21+)
+*   **Dependencies**: 
+    *   ConfigUpdater (Configuration management)
+    *   Floodgate & Cumulus (Bedrock UI support)
+    *   JavaMail (SMTP)
+    *   Gson (JSON processing)
+*   **Build System**: Maven
+
+## Development & Build Commands
+*   **Build Project**: `mvn clean package`
+*   **Output**: The compiled JAR is located in the `target/` directory.
+
+## Development Conventions
+*   **Command Prefixes**: When defining triggers, always prefix vanilla commands with `minecraft:` (e.g., `minecraft:give`) to ensure compatibility.
+*   **No Local Database**: Donation records are managed by the external platform; local storage is strictly for `offline_triggers`.
+*   **Surgical Edits**: When modifying the codebase, prioritize maintaining the manager-based abstraction layers.
+*   **Testing**: Verification of webhook handling and trigger execution is critical for stability.
+
+## Key Files
+*   `src/main/resources/config.yml`: Main plugin configuration.
+*   `src/main/resources/triggers.yml`: Reward/fulfillment definitions.
+*   `src/main/resources/lang/en-US.yml`: Localized messages.
+*   `src/main/java/click/sattr/plsDonate/StorageManager.java`: YAML persistence logic.
+*   `data/offline_triggers.yml`: Persistent storage for offline rewards (Do not edit manually).

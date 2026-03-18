@@ -32,10 +32,6 @@ webhook:
 
 # Main Donation Command Settings
 donate:
-  # The base command used for donations (e.g., /donate).
-  # You can rename this to /donasi, /gift, etc. via this config.
-  command: "donate"
-
   amount:
     # Minimum amount a player can donate per request.
     min: 1000
@@ -46,6 +42,9 @@ donate:
   message:
     max-length: 100
 
+  # Cooldown in seconds before a player can start another donation request.
+  cooldown: 10
+
   # Global notification settings
   notification: true
 
@@ -55,19 +54,21 @@ donate:
 # Triggers System
 triggers:
   # Enable or disable the ente triggers system globally
-  enabled: true
+  enabled: false
 
 # Bedrock Support (Requires GeyserMC and Floodgate on your server)
 bedrock-support: false
 
 # Advanced SMTP Email System (Used to send clickable payment links to Bedrock players)
 email:
-  # The default HTML email template in the 'templates' folder
-  template: "payment.html"
-
   # Name displayed as the sender in the user's inbox
   from-name: "plsDonate"
   subject: "Your Donation Payment Link - plsDonate"
+
+  # Custom HTML body for the email. Must be ONE LINE.
+  # If empty (""), it will use the default template from the plugin.
+  # Supported Placeholders: {PLAYER}, {PLAYER_UPPERCASED}, {PLAYER_LOWERCASED}, {AMOUNT}, {AMOUNT_FORMATTED}, {LINK}, {MESSAGE}, {METHOD}, {METHOD_LOWERCASED}, {METHOD_UPPERCASED}
+  body-template: ""
 
   # Fallback SMTP System
   # The plugin will attempt to use '1'. If it fails, it will attempt to fallback to '2', and so on.

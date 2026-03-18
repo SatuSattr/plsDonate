@@ -101,26 +101,10 @@ public class WebhookManager {
 
                 String transactionId = result.transactionId();
 
-                // 1. Database Match Check & Update
-                if (plugin.getDatabaseManager().checkTransactionExists(transactionId)) {
-                    plugin.getDatabaseManager().updateDonationStatus(transactionId, "paid");
-                    plugin.getLogger().info("Successfully processed internal donation: " + transactionId);
-                } else {
-                    plugin.getLogger().info("Received valid external/test webhook (ID: " + transactionId + "). Not in database, but will broadcast.");
-                    logFailedWebhookRaw(body, new GsonBuilder().setPrettyPrinting().create());
-                }
-
-                // 2. Global Broadcast Notification (Always if webhook is valid)
+                // Global Broadcast Notification (Always if webhook is valid)
                 if (plugin.getConfig().getBoolean("donate.notification", true)) {
                     Bukkit.getScheduler().runTask(plugin, () -> {
-                        java.util.Map<String, String> p = new java.util.HashMap<>();
-
-                        p.put("{PLAYER}", result.donorName());
-                        p.put("{AMOUNT}", String.valueOf((long)result.amount()));
-                        p.put("{AMOUNT_FORMATTED}", plugin.formatIndonesianNumber(result.amount()));
-                        p.put("{MESSAGE}", result.message());
-                        p.put("{EMAIL}", result.donorEmail());
-                        p.put("{METHOD}", result.paymentMethod());
+                        java.util.Map<String, String> p = plugin.getDonationPlaceholders(result.donorName(), result.amount(), result.donorEmail(), result.paymentMethod(), result.message());
                         p.put("{ID}", transactionId);
                         p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
 
@@ -156,42 +140,6 @@ public class WebhookManager {
             exchange.sendResponseHeaders(statusCode, response.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(response.getBytes());
-            }
-        }
-
-        private void logFailedWebhookRaw(String rawBody, Gson gson) {
-            File logFile = new File(plugin.getDataFolder(), "failed-webhook.json");
-            JsonArray array = new JsonArray();
-
-            JsonObject payload = null;
-            try {
-                payload = new JsonParser().parse(rawBody).getAsJsonObject();
-            } catch (Exception ignored) {}
-
-            if (payload == null) return;
-
-            if (logFile.exists()) {
-                try (BufferedReader reader = new BufferedReader(new FileReader(logFile))) {
-                    array = new JsonParser().parse(reader).getAsJsonArray();
-                } catch (Exception e) {
-                    plugin.getLogger().warning("Could not read existing failed-webhook.json. Creating new array.");
-                }
-            } else {
-                try {
-                    logFile.getParentFile().mkdirs();
-                    logFile.createNewFile();
-                } catch (IOException e) {
-                    plugin.getLogger().severe("Could not create failed-webhook.json: " + e.getMessage());
-                    return;
-                }
-            }
-
-            array.add(payload);
-
-            try (FileWriter writer = new FileWriter(logFile)) {
-                gson.toJson(array, writer);
-            } catch (IOException e) {
-                plugin.getLogger().severe("Failed to write to failed-webhook.json: " + e.getMessage());
             }
         }
     }
