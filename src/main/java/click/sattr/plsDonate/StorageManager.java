@@ -24,48 +24,25 @@ public class StorageManager {
         if (!dataDir.exists()) {
             dataDir.mkdirs();
         }
+        
         this.storageFile = new File(dataDir, "offline_triggers.yml");
         this.donationsFile = new File(dataDir, "donations.yml");
-        loadConfig();
-        loadDonations();
+        
+        loadConfigs();
     }
 
-    private void loadConfig() {
+    private void loadConfigs() {
+        // Handle offline_triggers.yml
         if (!storageFile.exists()) {
-            try {
-                storageFile.createNewFile();
-            } catch (IOException e) {
-                plugin.getLogger().severe("Could not create offline_triggers.yml: " + e.getMessage());
-            }
+            plugin.saveResource("data/offline_triggers.yml", false);
         }
         storageConfig = YamlConfiguration.loadConfiguration(storageFile);
-        
-        storageConfig.options().header(
-            "=======================================================================\n" +
-            "                           OFFLINE TRIGGERS DATA                         \n" +
-            "=======================================================================\n" +
-            " WARNING: DO NOT MODIFY THIS FILE MANUALLY!                            \n" +
-            " This file is used internally by the plugin to store rewards for       \n" +
-            " offline players. Manual changes can cause data corruption or          \n" +
-            " lead to reward fulfillment failures.                                  \n" +
-            "======================================================================="
-        );
-        storageConfig.options().copyHeader(true);
-        saveConfig();
-    }
 
-    private void loadDonations() {
+        // Handle donations.yml
         if (!donationsFile.exists()) {
-            try {
-                donationsFile.createNewFile();
-            } catch (IOException e) {
-                plugin.getLogger().severe("Could not create donations.yml: " + e.getMessage());
-            }
+            plugin.saveResource("data/donations.yml", false);
         }
         donationsConfig = YamlConfiguration.loadConfiguration(donationsFile);
-        donationsConfig.options().header("Ledger of donation requests and completed transactions to prevent replay attacks.");
-        donationsConfig.options().copyHeader(true);
-        saveDonations();
     }
 
     private void saveConfig() {

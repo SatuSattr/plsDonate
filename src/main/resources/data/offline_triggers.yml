@@ -1,0 +1,10 @@
+# ======================================================================= #
+#                           OFFLINE TRIGGERS DATA                         #
+# ======================================================================= #
+# WARNING: DO NOT MODIFY THIS FILE MANUALLY!                            #
+# This file is used internally by the plugin to store rewards for       #
+# offline players. Manual changes can cause data corruption or          #
+# lead to reward fulfillment failures.                                  #
+# ======================================================================= #
+
+triggers: {}
