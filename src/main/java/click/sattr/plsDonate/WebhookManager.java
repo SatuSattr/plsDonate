@@ -2,56 +2,40 @@ package click.sattr.plsDonate;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.bukkit.Bukkit;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 public class WebhookManager {
 
     private final PlsDonate plugin;
     private HttpServer server;
+    private static final int MAX_BODY_SIZE = 1024 * 64; // 64KB Max
 
     public WebhookManager(PlsDonate plugin) {
         this.plugin = plugin;
     }
 
     public boolean start(int port, String path) {
-        if (server != null) {
-            stop();
-        }
-
         try {
-            // Ensure path starts with / for HttpServer
-            String formattedPath = path.startsWith("/") ? path : "/" + path;
-            
             server = HttpServer.create(new InetSocketAddress(port), 0);
-            server.createContext(formattedPath, new WebhookHandler());
-            server.setExecutor(null); // creates a default executor
+            if (!path.startsWith("/")) path = "/" + path;
+            
+            server.createContext(path, new WebhookHandler());
+            server.setExecutor(null); 
             server.start();
-            plugin.getLogger().info("Webhook listener started on port " + port + " at path " + formattedPath);
+            plugin.getLogger().info("Webhook listener started on port " + port + " at path " + path);
             return true;
         } catch (IOException e) {
-            plugin.getLogger().severe("Failed to start webhook listener on port " + port);
-            e.printStackTrace();
+            plugin.getLogger().severe("Could not start webhook listener: " + e.getMessage());
             return false;
         }
     }
@@ -59,23 +43,19 @@ public class WebhookManager {
     public void stop() {
         if (server != null) {
             server.stop(0);
-            server = null;
             plugin.getLogger().info("Webhook listener stopped.");
         }
     }
 
     private class WebhookHandler implements HttpHandler {
-        private static final int MAX_BODY_SIZE = 3072; // 3KB limit
-
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            try {
-                if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-                    sendResponse(exchange, 405, "Method Not Allowed");
-                    return;
-                }
+            if (!exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                sendResponse(exchange, 405, "Method Not Allowed");
+                return;
+            }
 
-                // Read body with size limit
+            try {
                 String body;
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))) {
                     char[] buffer = new char[MAX_BODY_SIZE + 1];
@@ -96,10 +76,20 @@ public class WebhookManager {
                     return;
                 }
 
-                // Success - Verification Passed
-                plugin.getLogger().info("Received verified webhook for tx: " + result.transactionId());
-
                 String transactionId = result.transactionId();
+
+                // Validate against Ledger to prevent replay attacks
+                if (!plugin.getStorageManager().isTransactionValid(transactionId, result.amount(), result.donorName())) {
+                    plugin.getLogger().warning("Received potential replay attack or unrecorded transaction: " + transactionId + " from " + result.donorName());
+                    sendResponse(exchange, 403, "Forbidden - Transaction used or invalid");
+                    return;
+                }
+
+                // Success - Verification Passed
+                plugin.getLogger().info("Verified donation: " + result.donorName() + " donated Rp" + plugin.formatIndonesianNumber(result.amount()) + " (tx: " + transactionId + ")");
+                
+                // Mark as completed in Ledger
+                plugin.getStorageManager().markTransactionUsed(transactionId);
 
                 // Global Broadcast Notification (Always if webhook is valid)
                 if (plugin.getConfig().getBoolean("donate.notification", true)) {

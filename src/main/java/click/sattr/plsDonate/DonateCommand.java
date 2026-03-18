@@ -132,7 +132,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
 
         // 2. Email Validation
         String email = args[1];
-        if (!EMAIL_PATTERN.matcher(email).matches()) {
+        if (!EMAIL_PATTERN.matcher(email).matches() || email.length() > 64) {
             Map<String, String> p = new HashMap<>();
             p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
             player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("invalid-email", "{PREFIX} <white>Please <red>provide <white>a valid email <gray>example: (your@gmail.com)"), p));
@@ -246,6 +246,11 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
 
         plugin.getDonationPlatform().createDonation(player.getName(), email, amount, method, message).thenAccept(response -> {
             if (response.success()) {
+                // Log request to ledger to prevent replay
+                if (response.transactionId() != null) {
+                    plugin.getStorageManager().createDonationRequest(response.transactionId(), amount, player.getName());
+                }
+
                 // Send Email to Bedrock Player
                 plugin.getEmailManager().sendPaymentEmail(
                         player.getName(),

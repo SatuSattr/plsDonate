@@ -115,14 +115,15 @@ public class ExpressionEvaluator {
         try {
             double leftNum = Double.parseDouble(left);
             double rightNum = Double.parseDouble(right);
+            double epsilon = 0.01; // Small enough for IDR currency
 
             return switch (foundOp.trim()) {
-                case "==" -> leftNum == rightNum;
-                case "!=" -> leftNum != rightNum;
-                case ">=" -> leftNum >= rightNum;
-                case "<=" -> leftNum <= rightNum;
-                case ">" -> leftNum > rightNum;
-                case "<" -> leftNum < rightNum;
+                case "==" -> Math.abs(leftNum - rightNum) < epsilon;
+                case "!=" -> Math.abs(leftNum - rightNum) >= epsilon;
+                case ">=" -> leftNum >= rightNum - epsilon;
+                case "<=" -> leftNum <= rightNum + epsilon;
+                case ">" -> leftNum > rightNum + epsilon;
+                case "<" -> leftNum < rightNum - epsilon;
                 default -> false; 
             };
         } catch (NumberFormatException e) {

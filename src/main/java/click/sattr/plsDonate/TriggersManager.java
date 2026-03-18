@@ -56,7 +56,7 @@ public class TriggersManager implements Listener {
             boolean conditionsMet = true;
 
             for (String condition : conditions) {
-                String processedCondition = formatPlaceholders(condition, donorName, amount, formattedAmount, message, paymentMethod, txId);
+                String processedCondition = formatPlaceholders(condition, donorName, amount, formattedAmount, message, paymentMethod, txId, true);
                 if (!ExpressionEvaluator.evaluateCondition(processedCondition)) {
                     conditionsMet = false;
                     break;
@@ -70,7 +70,8 @@ public class TriggersManager implements Listener {
                 boolean isOnline = Bukkit.getPlayerExact(donorName) != null;
 
                 for (String command : commands) {
-                    String processedCommand = formatPlaceholders(command, donorName, amount, formattedAmount, message, paymentMethod, txId);
+                    // Sanitize message/name for command execution
+                    String processedCommand = formatPlaceholders(command, donorName, amount, formattedAmount, message, paymentMethod, txId, false);
                     processedCommand = evaluateMathBlocks(processedCommand);
 
                     if (requireOnline && !isOnline) {
@@ -84,13 +85,23 @@ public class TriggersManager implements Listener {
         }
     }
 
-    private String formatPlaceholders(String text, String player, double amount, String formattedAmount, String message, String method, String id) {
-        return text.replace("{player}", player)
+    private String formatPlaceholders(String text, String player, double amount, String formattedAmount, String message, String method, String id, boolean forExpression) {
+        // Sanitize player name and message to prevent command injection
+        String safePlayer = sanitize(player);
+        String safeMessage = sanitize(message);
+        
+        return text.replace("{player}", safePlayer)
                    .replace("{amount}", String.valueOf(amount))
                    .replace("{amount_formatted}", formattedAmount)
-                   .replace("{message}", message)
+                   .replace("{message}", safeMessage)
                    .replace("{method}", method)
                    .replace("{id}", id);
+    }
+
+    private String sanitize(String input) {
+        if (input == null) return "";
+        // Escape double quotes and backslashes to prevent JSON/Command breaking
+        return input.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private String evaluateMathBlocks(String command) {
@@ -134,8 +145,16 @@ public class TriggersManager implements Listener {
             List<String> offlineCommands = plugin.getStorageManager().getAndRemoveOfflineTriggers(player.getName());
             if (!offlineCommands.isEmpty()) {
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    for (String command : offlineCommands) {
-                        executeCommand(command);
+                    // Check if player is still online before executing offline rewards
+                    if (player.isOnline()) {
+                        for (String command : offlineCommands) {
+                            executeCommand(command);
+                        }
+                    } else {
+                        // Put them back if they left instantly (Extreme edge case)
+                        for (String command : offlineCommands) {
+                            plugin.getStorageManager().insertOfflineTrigger(player.getName(), command);
+                        }
                     }
                 });
             }
