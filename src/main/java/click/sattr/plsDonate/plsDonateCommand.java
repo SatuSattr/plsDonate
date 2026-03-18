@@ -48,11 +48,51 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
             sender.sendMessage(plugin.parseMessage("<gray>------ <green>plsDonate Help <gray>------<newline>", p));
             sender.sendMessage(plugin.parseMessage("    <yellow>/pdn help <gray>- Show this help message", p));
+            sender.sendMessage(plugin.parseMessage("    <yellow>/pdn leaderboard [--update] <gray>- Show top donators", p));
+            sender.sendMessage(plugin.parseMessage("    <yellow>/pdn milestone [--update] <gray>- Show donation goal", p));
             if (sender.hasPermission("plsdonate.admin")) {
                 sender.sendMessage(plugin.parseMessage("    <yellow>/pdn fakedonate <amount> <email> <method> [msg] <gray>- Simulate a real donation", p));
                 sender.sendMessage(plugin.parseMessage("    <yellow>/pdn reload <gray>- Reload configuration", p));
             }
             sender.sendMessage(plugin.parseMessage("<newline><gray>----------------------------", p));
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("leaderboard")) {
+            if (!plugin.getOverlayManager().isConfigured()) {
+                plugin.sendLangMessage(sender, "overlay-disabled");
+                return true;
+            }
+
+            boolean forceUpdate = args.length > 1 && args[1].equalsIgnoreCase("--update");
+
+            if (forceUpdate) {
+                plugin.sendLangMessage(sender, "loading-overlay");
+                plugin.getOverlayManager().updateCacheAsync().thenAccept(v -> {
+                    Bukkit.getScheduler().runTask(plugin, () -> displayLeaderboard(sender));
+                });
+            } else {
+                displayLeaderboard(sender);
+            }
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("milestone")) {
+            if (!plugin.getOverlayManager().isConfigured()) {
+                plugin.sendLangMessage(sender, "overlay-disabled");
+                return true;
+            }
+
+            boolean forceUpdate = args.length > 1 && args[1].equalsIgnoreCase("--update");
+
+            if (forceUpdate) {
+                plugin.sendLangMessage(sender, "loading-overlay");
+                plugin.getOverlayManager().updateCacheAsync().thenAccept(v -> {
+                    Bukkit.getScheduler().runTask(plugin, () -> displayMilestone(sender));
+                });
+            } else {
+                displayMilestone(sender);
+            }
             return true;
         }
 
@@ -178,6 +218,54 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private void displayLeaderboard(CommandSender sender) {
+        List<OverlayManager.LeaderboardEntry> entries = plugin.getOverlayManager().getCachedLeaderboard();
+        Map<String, String> p = new HashMap<>();
+        p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
+        
+        sender.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("leaderboard-header", "<gray>------ <gold>Donation Leaderboard <gray>------"), p));
+        if (entries.isEmpty()) {
+            sender.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("leaderboard-empty", "<gray>No donation records found."), p));
+        } else {
+            for (int i = 0; i < entries.size(); i++) {
+                OverlayManager.LeaderboardEntry entry = entries.get(i);
+                Map<String, String> entryP = new HashMap<>(p);
+                entryP.put("{RANK}", String.valueOf(i + 1));
+                entryP.put("{NAME}", entry.name());
+                entryP.put("{AMOUNT}", entry.amount());
+                entryP.put("{AMOUNT_FORMATTED}", entry.amountFormatted());
+                sender.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("leaderboard-format", "<yellow>{RANK}. <white>{NAME} <gray>- <green>Rp{AMOUNT_FORMATTED}"), entryP));
+            }
+        }
+        sender.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("leaderboard-footer", "<gray>----------------------------"), p));
+    }
+
+    private void displayMilestone(CommandSender sender) {
+        OverlayManager.MilestoneData data = plugin.getOverlayManager().getCachedMilestone();
+        Map<String, String> p = new HashMap<>();
+        p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
+        
+        sender.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("milestone-header", "<gray>------ <gold>Donation Milestone <gray>------"), p));
+        if (data == null) {
+            sender.sendMessage(plugin.parseMessage("<red>No milestone data available yet. Please wait or use --update.", p));
+        } else {
+            Map<String, String> dataP = new HashMap<>(p);
+            dataP.put("{TITLE}", data.title());
+            dataP.put("{CURRENT}", data.current());
+            dataP.put("{TARGET}", data.target());
+            dataP.put("{CURRENT_FORMATTED}", data.currentFormatted());
+            dataP.put("{TARGET_FORMATTED}", data.targetFormatted());
+            dataP.put("{PERCENT}", String.format("%.1f", data.getPercentage()));
+            dataP.put("{START_DATE}", data.startDate());
+            dataP.put("{START_TIME}", data.startTime());
+            
+            sender.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("milestone-title", "  <white>Target: <yellow>{TITLE}"), dataP));
+            sender.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("milestone-progress", "  <white>Progress: <green>Rp{CURRENT_FORMATTED} <gray>/ <red>Rp{TARGET_FORMATTED}"), dataP));
+            sender.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("milestone-percentage", "  <white>Percentage: <aqua>{PERCENT}%"), dataP));
+        }
+        sender.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("milestone-footer", "<gray>----------------------------"), p));
+    }
+
     private void executeFakeDonation(Player player, double amount, String email, String method, String message) {
         String formattedAmount = plugin.formatIndonesianNumber(amount);
         String txId = "FAKETX-" + System.currentTimeMillis();
@@ -196,6 +284,11 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
 
         if (plugin.getTriggersManager() != null) {
             plugin.getTriggersManager().processDonation(player.getName(), amount, formattedAmount, message, method, txId);
+        }
+        
+        // Update Overlay Cache on fake donation if configured
+        if (plugin.getOverlayManager() != null && plugin.getOverlayManager().isConfigured()) {
+            plugin.getOverlayManager().updateCacheAsync();
         }
 
         Map<String, String> fP = new HashMap<>();
@@ -230,7 +323,11 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             String sub = args[0].toLowerCase();
             if ("fakedonate".startsWith(sub) && sender.hasPermission("plsdonate.admin")) completions.add("fakedonate");
             if ("reload".startsWith(sub) && sender.hasPermission("plsdonate.admin")) completions.add("reload");
+            if ("leaderboard".startsWith(sub)) completions.add("leaderboard");
+            if ("milestone".startsWith(sub)) completions.add("milestone");
             if ("help".startsWith(sub)) completions.add("help");
+        } else if (args.length == 2 && (args[0].equalsIgnoreCase("leaderboard") || args[0].equalsIgnoreCase("milestone"))) {
+            if ("--update".startsWith(args[1].toLowerCase())) completions.add("--update");
         } else if (args.length > 1 && args[0].equalsIgnoreCase("fakedonate") && sender.hasPermission("plsdonate.admin")) {
             if (args.length == 2) {
                 String sub = args[1].toLowerCase();

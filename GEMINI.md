@@ -12,6 +12,7 @@ This file serves as the foundational mandate for all AI interactions within the 
 *   **Offline Rewards**: Persistent storage (`offline_triggers.yml`) ensures rewards are delivered even if a player is offline during the donation.
 *   **Bedrock Support**: Native UI support for Bedrock Edition players via Geyser/Floodgate.
 *   **Email System**: SMTP-based email dispatching for sending payment links to players.
+*   **Overlay API Integration**: Support for fetching donation leaderboard and milestone progress from a self-hosted Tako Overlay API.
 
 ## Technical Architecture
 The plugin follows a modular, manager-based architecture:
@@ -21,6 +22,7 @@ The plugin follows a modular, manager-based architecture:
 *   **`TriggersManager`**: Parses and executes rewards defined in `triggers.yml`.
 *   **`TakoPlatform`**: Implements the `DonationPlatform` interface for API communication.
 *   **`EmailManager`**: Handles SMTP communication for transactional emails.
+*   **`OverlayManager`**: Handles asynchronous communication with the self-hosted Tako Overlay API for leaderboard and milestone data.
 
 ## Technology Stack
 *   **Language**: Java 21
@@ -47,4 +49,5 @@ The plugin follows a modular, manager-based architecture:
 *   `src/main/resources/triggers.yml`: Reward/fulfillment definitions.
 *   `src/main/resources/lang/en-US.yml`: Localized messages.
 *   `src/main/java/click/sattr/plsDonate/StorageManager.java`: YAML persistence logic.
+*   `src/main/java/click/sattr/plsDonate/OverlayManager.java`: Overlay API interaction logic.
 *   `data/offline_triggers.yml`: Persistent storage for offline rewards (Do not edit manually).

@@ -33,6 +33,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
     private DonationPlatform donationPlatform;
     private TriggersManager triggersManager;
     private EmailManager emailManager;
+    private OverlayManager overlayManager;
     private BedrockFormHandler bedrockFormHandler;
     private DonateCommand donateCommand;
     private plsDonateCommand pdnCommand;
@@ -43,25 +44,52 @@ public final class PlsDonate extends JavaPlugin implements Listener {
     public FileConfiguration getLangConfig() { return langConfig; }
     public TriggersManager getTriggersManager() { return triggersManager; }
     public EmailManager getEmailManager() { return emailManager; }
+    public OverlayManager getOverlayManager() { return overlayManager; }
     public BedrockFormHandler getBedrockFormHandler() { return bedrockFormHandler; }
+    
+    @Override
     public void onEnable() {
-        // Plugin startup logic
-        saveDefaultConfig();
-        if (!new File(getDataFolder(), "lang/en-US.yml").exists()) {
-            saveResource("lang/en-US.yml", false);
+        // Create plugin folder if it doesn't exist
+        if (!getDataFolder().exists()) {
+            getDataFolder().mkdirs();
         }
 
         File configFile = new File(getDataFolder(), "config.yml");
-        try {
-            ConfigUpdater.update(this, "config.yml", configFile, Collections.emptyList());
-        } catch (IOException e) {
-            getLogger().severe("Could not update config.yml!");
-            e.printStackTrace();
+        
+        // If config doesn't exist, save default
+        if (!configFile.exists()) {
+            saveResource("config.yml", false);
+        } else {
+            // If it exists, update it
+            try {
+                ConfigUpdater.update(this, "config.yml", configFile, Collections.emptyList());
+            } catch (IOException e) {
+                getLogger().severe("Could not update config.yml!");
+                e.printStackTrace();
+            }
         }
 
+        // Now reload to make sure we have the latest data
         reloadConfig();
-        
         loadLanguageConfig();
+
+        // Initialize Overlay Manager
+        overlayManager = new OverlayManager(this);
+        
+        // Initial update and schedule periodic tasks
+        if (overlayManager.isConfigured()) {
+            getLogger().info("Fetching initial leaderboard and milestone data from Overlay API...");
+            overlayManager.updateCacheAsync().thenRun(() -> {
+                getLogger().info("Successfully cached leaderboard and milestone data.");
+            });
+            
+            long interval = getConfig().getLong("overlay-api.update-interval", 7);
+            if (interval > 0) {
+                Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
+                    overlayManager.updateCacheAsync();
+                }, interval * 1200L, interval * 1200L); // Interval in minutes to ticks (20 * 60)
+            }
+        }
 
         // Initialize Storage Manager
         storageManager = new StorageManager(this);
@@ -104,9 +132,6 @@ public final class PlsDonate extends JavaPlugin implements Listener {
             return;
         }
 
-        // Empty replacement as it was moved up
-        ;
-
         // Delayed startup message to appear after "Done!"
         Bukkit.getScheduler().runTask(this, () -> {
             Map<String, String> placeholders = new HashMap<>();
@@ -122,22 +147,29 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         Map<String, String> p = new HashMap<>();
         p.put("{PREFIX}", langConfig.getString("prefix", "<gray>[<green>plsDonate<gray>]<reset>"));
 
-        String takoToken = getConfig().getString("platform.tako.webhook-token", getConfig().getString("webhook.token", ""));
+        String takoToken = getConfig().getString("platform.tako.webhook-token", "your_secret_token_here");
         if (takoToken.isEmpty() || "your_secret_token_here".equals(takoToken)) {
             Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Tako.id Webhook Token is not set! (platform.tako.webhook-token)</red>", p));
         }
 
-        String takoCreator = getConfig().getString("platform.tako.creator", getConfig().getString("api.creator", ""));
+        String takoCreator = getConfig().getString("platform.tako.creator", "");
         if (takoCreator.isEmpty()) {
             Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Tako.id Creator is empty! (platform.tako.creator)</red>", p));
         }
 
-        String takoKey = getConfig().getString("platform.tako.api-key", getConfig().getString("api.key", ""));
+        String takoKey = getConfig().getString("platform.tako.api-key", "your_secret_api_key_here");
         if (takoKey.isEmpty() || "your_secret_api_key_here".equals(takoKey)) {
             Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] Tako.id API Key is empty! (platform.tako.api-key)</red>", p));
         }
 
-        // Email is now required for ALL players (Java & Bedrock)
+        // Check Overlay API
+        String overlayBase = getConfig().getString("overlay-api.base-url", "");
+        String overlayKey = getConfig().getString("overlay-api.overlay-key", "");
+        if (overlayBase.isEmpty() || overlayKey.isEmpty()) {
+            Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <yellow>[!] Overlay API is not fully configured. /pdn leaderboard/milestone will be disabled.</yellow>", p));
+        }
+
+        // Email hosts check
         org.bukkit.configuration.ConfigurationSection hosts = getConfig().getConfigurationSection("email.hosts");
         if (hosts == null || hosts.getKeys(false).isEmpty()) {
             Bukkit.getConsoleSender().sendMessage(parseMessage("{PREFIX} <red>[!] 'email.hosts' is missing/empty in config.yml! Payment emails will not be sent.</red>", p));
@@ -186,18 +218,12 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         }
     }
 
-    /**
-     * Reloads configuration files, updates them, and restarts the webhook listener if needed.
-     */
     public void reloadPlugin() {
-        // Stop Webhook before we reload config to avoid port binding issues on restart
         if (webhookManager != null) {
             webhookManager.stop();
         }
 
-        // Fetch configs & update defaults
         File configFile = new File(getDataFolder(), "config.yml");
-
         try {
             ConfigUpdater.update(this, "config.yml", configFile, Collections.emptyList());
         } catch (IOException e) {
@@ -205,7 +231,6 @@ public final class PlsDonate extends JavaPlugin implements Listener {
             e.printStackTrace();
         }
         
-        // Reload into memory
         reloadConfig();
         loadLanguageConfig();
         loadActivePlatform();
@@ -218,17 +243,14 @@ public final class PlsDonate extends JavaPlugin implements Listener {
             emailManager.reload();
         }
 
-        // Check if Bedrock support was just enabled mid-game, initialize if null
         if (bedrockFormHandler == null && getConfig().getBoolean("bedrock-support", false) && getServer().getPluginManager().getPlugin("floodgate") != null) {
             try {
                 bedrockFormHandler = new BedrockFormHandler(this);
-                getLogger().info("Geyser/Floodgate detected during reload! Bedrock UI support enabled.");
             } catch (Exception e) {
-                getLogger().warning("Failed to initialize Bedrock forms although floodgate was detected.");
+                getLogger().warning("Failed to initialize Bedrock forms during reload.");
             }
         }
 
-        // Restart webhook with new config (Mandatory)
         int port = getConfig().getInt("webhook.port", 8080);
         String path = getConfig().getString("webhook.path", "/donate");
         
@@ -239,12 +261,6 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         checkImportantConfigs();
     }
 
-    /**
-     * Parses a string to a Component using MiniMessage.
-     * @param string The MiniMessage string to parse.
-     * @param placeholders Key-Value map of {PLACEHOLDER} -> Replacement (e.g., {"{AMOUNT}": "10"})
-     * @return The parsed Component.
-     */
     public Component parseMessage(String string, Map<String, String> placeholders) {
         if (placeholders != null) {
             for (Map.Entry<String, String> entry : placeholders.entrySet()) {
@@ -254,21 +270,10 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         return parseMessage(string);
     }
 
-    /**
-     * Parses a string to a Component using MiniMessage.
-     * @param string The MiniMessage string to parse.
-     * @return The parsed Component.
-     */
     public Component parseMessage(String string) {
         return MiniMessage.miniMessage().deserialize(string);
     }
 
-    /**
-     * Sends a prefixed MiniMessage to a CommandSender with placeholders.
-     * @param sender The receiver
-     * @param path The path in lang.yml
-     * @param placeholders Placeholder replacement map
-     */
     public void sendLangMessage(CommandSender sender, String path, Map<String, String> placeholders) {
         String prefix = langConfig.getString("prefix", "<yellow>[plsDonate]</yellow> ");
         String message = langConfig.getString(path, "<red>Missing translation for: " + path + "</red>");
@@ -283,17 +288,10 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         sender.sendMessage(parseMessage(message));
     }
 
-    /**
-     * Sends a string message to a CommandSender without prefix (used internally for lists).
-     */
     public void sendLangMessage(CommandSender sender, String path) {
         sendLangMessage(sender, path, null);
     }
 
-    /**
-     * Sends a list of prefixed MiniMessages to a CommandSender with placeholders.
-     * Often used for multi-line messages like 'donation-confirmation-java'.
-     */
     public void sendLangMessageList(CommandSender sender, String path, Map<String, String> placeholders) {
         if (!langConfig.contains(path)) {
             sender.sendMessage(parseMessage("<red>Missing list translation for: " + path + "</red>"));
@@ -315,10 +313,6 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         }
     }
 
-    /**
-     * Plays a sequence of sounds defined in config.yml at the given path.
-     * Format: "sound_name,pitch,volume"
-     */
     public void playConfigSounds(Player player, String path) {
         List<String> soundStrings = getConfig().getStringList(path);
         if (soundStrings.isEmpty()) return;
@@ -350,9 +344,6 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         }
     }
 
-    /**
-     * Formats a number using Indonesian locale (dots as thousand separators).
-     */
     public String formatIndonesianNumber(double number) {
         NumberFormat nf = NumberFormat.getInstance(Locale.forLanguageTag("id-ID"));
         return nf.format(number);
@@ -362,6 +353,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         donationPlatform = new TakoPlatform(this);
         getLogger().info("Donation Platform: Tako.id Enabled (Express Version)");
     }
+
     public Map<String, String> getDonationPlaceholders(String donorName, double amount, String email, String method, String message) {
         Map<String, String> p = new HashMap<>();
         p.put("{PLAYER}", donorName);

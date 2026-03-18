@@ -47,17 +47,16 @@ donation-notification:
   - ""
 
 donation-confirmation-bedrock:
-  title: Donation Confirmation
+  title: "Donation Confirmation"
   content:
-    - <white>Are you sure about your <light_purple>Donation?
+    - "<white>Are you sure about your <light_purple>Donation?"
     - ""
     - "  <gray>» Amount: <green>Rp{AMOUNT_FORMATTED}"
     - "  <gray>» Email: <gray>{EMAIL}"
     - "  <gray>» Method: {METHOD_COLORED}"
     - "  <gray>» Message: <reset>{MESSAGE}"
     - ""
-    - <white>We will send the payment link to your <gold>Email <white>after you click
-      Yes.
+    - "<white>We will send the payment link to your <gold>Email <white>after you click Yes."
     - ""
   btn-yes: "Yes"
   btn-no: "No"
@@ -82,3 +81,19 @@ fake-donation-processed: "{PREFIX} <green>Fake donation form successfully proces
 donation-processing: "{PREFIX} <gray>Processing your donation form... Please check your email shortly!</gray>"
 donation-email-sent: "{PREFIX} <green>A payment link has been sent to your email!</green>"
 api-error: "{PREFIX} <red>API Error: {ERROR}</red>"
+overlay-disabled: "{PREFIX} <red>Overlay API is not configured! Please check your config.yml</red>"
+
+# Available Placeholders: {PREFIX}, {RANK}, {NAME}, {AMOUNT}, {AMOUNT_FORMATTED}
+leaderboard-header: "<gray>------ <gold>Donation Leaderboard <gray>------"
+leaderboard-format: "<yellow>{RANK}. <white>{NAME} <gray>- <green>Rp{AMOUNT_FORMATTED}"
+leaderboard-empty: "<gray>No donation records found."
+leaderboard-footer: "<gray>----------------------------"
+
+# Available Placeholders: {PREFIX}, {TITLE}, {CURRENT}, {TARGET}, {CURRENT_FORMATTED}, {TARGET_FORMATTED}, {PERCENT}, {START_DATE}, {START_TIME}
+milestone-header: "<gray>------ <gold>Donation Milestone <gray>------"
+milestone-title: "  <white>Target: <yellow>{TITLE}"
+milestone-progress: "  <white>Progress: <green>Rp{CURRENT_FORMATTED} <gray>/ <red>Rp{TARGET_FORMATTED}"
+milestone-percentage: "  <white>Percentage: <aqua>{PERCENT}%"
+milestone-footer: "<gray>----------------------------"
+
+loading-overlay: "{PREFIX} <gray>Fetching data from API... Please wait."

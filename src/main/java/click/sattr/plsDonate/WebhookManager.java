@@ -124,6 +124,11 @@ public class WebhookManager {
                                 transactionId
                             );
                         }
+                        
+                        // Update Overlay Cache on donation
+                        if (plugin.getOverlayManager() != null && plugin.getOverlayManager().isConfigured()) {
+                            plugin.getOverlayManager().updateCacheAsync();
+                        }
                     });
                 }
 
