@@ -8,4 +8,4 @@ commands:
     aliases: [pdn]
   donate:
     description: Main donation command
-softdepend: [floodgate]
+softdepend: [floodgate, Geyser-Spigot, Geyser, PlaceholderAPI]

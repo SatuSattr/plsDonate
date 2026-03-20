@@ -82,6 +82,10 @@ public final class PlsDonate extends JavaPlugin implements Listener {
 
         // Now reload to make sure we have the latest data
         reloadConfig();
+        
+        // Auto-toggle bedrock-support if Geyser and Floodgate are detected
+        checkAndAutoEnableBedrockSupport();
+        
         loadLanguageConfig();
 
         // Initialize Database & Repositories
@@ -108,6 +112,12 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         loadActivePlatform();
         
         emailManager = new EmailManager(this);
+
+        // Register PlaceholderAPI expansion
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new click.sattr.plsDonate.util.PlsDonateExpansion(this).register();
+            getLogger().info("PlaceholderAPI detected! Placeholders registered.");
+        }
         
         // Initialize Bedrock/Floodgate Handler if enabled and installed
         if (getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false) && getServer().getPluginManager().getPlugin("floodgate") != null) {
@@ -139,6 +149,20 @@ public final class PlsDonate extends JavaPlugin implements Listener {
             
             checkImportantConfigs();
         });
+    }
+
+    private void checkAndAutoEnableBedrockSupport() {
+        boolean hasGeyser = getServer().getPluginManager().getPlugin("Geyser-Spigot") != null || 
+                           getServer().getPluginManager().getPlugin("Geyser") != null;
+        boolean hasFloodgate = getServer().getPluginManager().getPlugin("floodgate") != null;
+
+        if (hasGeyser && hasFloodgate) {
+            if (!getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false)) {
+                getConfig().set(Constants.CONF_BEDROCK_SUPPORT, true);
+                saveConfig();
+                getLogger().info("Geyser and Floodgate detected! 'bedrock-support' has been automatically enabled in config.yml.");
+            }
+        }
     }
 
     private void checkImportantConfigs() {

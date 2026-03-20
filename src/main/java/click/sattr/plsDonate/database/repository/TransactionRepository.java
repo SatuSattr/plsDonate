@@ -122,6 +122,50 @@ public class TransactionRepository {
         return false;
     }
 
+    public double getPlayerTotal(String playerName) {
+        String sql = "SELECT SUM(amount) FROM transactions WHERE donor_name = ? AND status = 'COMPLETED' AND is_sandbox = 0";
+        try (Connection conn = databaseManager.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, playerName);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getDouble(1);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to get player total: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    public int getPlayerRank(String playerName) {
+        String sql = "SELECT donor_name, SUM(amount) as total FROM transactions WHERE status = 'COMPLETED' AND is_sandbox = 0 GROUP BY donor_name ORDER BY total DESC";
+        try (Connection conn = databaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            int rank = 1;
+            while (rs.next()) {
+                if (rs.getString("donor_name").equalsIgnoreCase(playerName)) return rank;
+                rank++;
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to get player rank: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    public LeaderboardEntry getRecentDonation() {
+        String sql = "SELECT donor_name, amount FROM transactions WHERE status = 'COMPLETED' AND is_sandbox = 0 ORDER BY completed_at DESC LIMIT 1";
+        try (Connection conn = databaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                double amount = rs.getDouble("amount");
+                return new LeaderboardEntry(rs.getString("donor_name"), amount, MessageUtils.formatIndonesianNumber(amount));
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to get recent donation: " + e.getMessage());
+        }
+        return null;
+    }
+
     private String calculateMD5(String input) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");

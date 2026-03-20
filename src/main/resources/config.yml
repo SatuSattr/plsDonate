@@ -51,13 +51,13 @@ donate:
     max-length: 100
 
   # Cooldown in seconds before a player can start another donation request.
-  cooldown: 10
-
-  # Global notification settings
-  notification: true
+  cooldown: 15
 
   # Requires the player to click a "Yes" button before processing the donation
   confirmation: true
+
+  # Global notification settings
+  notification: true
 
 # Triggers System
 triggers:
