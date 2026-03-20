@@ -182,24 +182,38 @@ public final class PlsDonate extends JavaPlugin implements Listener {
 
     private void loadLanguageConfig() {
         String langName = getConfig().getString("language", "en-US");
-        File langFile = new File(getDataFolder(), "lang/" + langName + ".yml");
+        File langFolder = new File(getDataFolder(), "lang");
+        if (!langFolder.exists()) langFolder.mkdirs();
+
+        File langFile = new File(langFolder, langName + ".yml");
         
         if (!langFile.exists()) {
-            getLogger().warning("Language file " + langName + ".yml not found! Defaulting to en-US.yml");
-            langFile = new File(getDataFolder(), "lang/en-US.yml");
-            if (!langFile.exists()) {
-                saveResource("lang/en-US.yml", false);
+            try {
+                saveResource("lang/" + langName + ".yml", false);
+            } catch (IllegalArgumentException e) {
+                getLogger().warning("Language file lang/" + langName + ".yml not found in resources! Falling back to en-US.yml");
+                langName = "en-US";
+                langFile = new File(langFolder, "en-US.yml");
+                if (!langFile.exists()) {
+                    saveResource("lang/en-US.yml", false);
+                }
             }
         }
         
         try {
-            ConfigUpdater.update(this, "lang/en-US.yml", langFile, Collections.emptyList());
+            String resourcePath = "lang/" + langName + ".yml";
+            try {
+                ConfigUpdater.update(this, resourcePath, langFile, Collections.emptyList());
+            } catch (Exception e) {
+                ConfigUpdater.update(this, "lang/en-US.yml", langFile, Collections.emptyList());
+            }
         } catch (IOException e) {
             getLogger().severe("Could not update language file: " + langFile.getName());
             e.printStackTrace();
         }
 
         langConfig = YamlConfiguration.loadConfiguration(langFile);
+        getLogger().info("Language loaded: " + langName);
     }
 
     @Override
@@ -213,6 +227,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
     }
 
     public void reloadPlugin() {
+        getLogger().info("Reloading plsDonate-Express configuration...");
         if (webhookManager != null) {
             webhookManager.stop();
         }
@@ -253,6 +268,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         }
 
         checkImportantConfigs();
+        getLogger().info("plsDonate-Express reload complete.");
     }
 
     public void loadActivePlatform() {
