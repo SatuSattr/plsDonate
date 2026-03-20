@@ -1,5 +1,7 @@
-package click.sattr.plsDonate;
+package click.sattr.plsDonate.manager;
 
+import click.sattr.plsDonate.PlsDonate;
+import click.sattr.plsDonate.util.ExpressionEvaluator;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -75,7 +77,7 @@ public class TriggersManager implements Listener {
                     processedCommand = evaluateMathBlocks(processedCommand);
 
                     if (requireOnline && !isOnline) {
-                        plugin.getStorageManager().insertOfflineTrigger(donorName, processedCommand);
+                        plugin.getOfflineTriggerRepository().insertOfflineTrigger(donorName, processedCommand);
                         plugin.getLogger().info("Saved offline trigger command for " + donorName + " (Waiting for login).");
                     } else {
                         executeCommand(processedCommand);
@@ -142,7 +144,7 @@ public class TriggersManager implements Listener {
 
         Player player = event.getPlayer();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            List<String> offlineCommands = plugin.getStorageManager().getAndRemoveOfflineTriggers(player.getName());
+            List<String> offlineCommands = plugin.getOfflineTriggerRepository().getAndRemoveOfflineTriggers(player.getName());
             if (!offlineCommands.isEmpty()) {
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     // Check if player is still online before executing offline rewards
@@ -153,7 +155,7 @@ public class TriggersManager implements Listener {
                     } else {
                         // Put them back if they left instantly (Extreme edge case)
                         for (String command : offlineCommands) {
-                            plugin.getStorageManager().insertOfflineTrigger(player.getName(), command);
+                            plugin.getOfflineTriggerRepository().insertOfflineTrigger(player.getName(), command);
                         }
                     }
                 });

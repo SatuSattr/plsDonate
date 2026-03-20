@@ -1,5 +1,8 @@
-package click.sattr.plsDonate;
+package click.sattr.plsDonate.webhook;
 
+import click.sattr.plsDonate.PlsDonate;
+import click.sattr.plsDonate.util.MessageUtils;
+import click.sattr.plsDonate.platform.DonationPlatform;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.HttpExchange;
@@ -68,7 +71,7 @@ public class WebhookManager {
                 }
 
                 // Call active platform to parse and verify the webhook
-                click.sattr.plsDonate.platform.DonationPlatform.WebhookResult result = plugin.getDonationPlatform().parseWebhook(body, exchange.getRequestHeaders());
+                DonationPlatform.WebhookResult result = plugin.getDonationPlatform().parseWebhook(body, exchange.getRequestHeaders());
 
                 if (!result.valid()) {
                     plugin.getLogger().warning("Webhook Validation Failed: " + result.errorMessage());
@@ -79,17 +82,33 @@ public class WebhookManager {
                 String transactionId = result.transactionId();
 
                 // Validate against Ledger to prevent replay attacks
-                if (!plugin.getStorageManager().isTransactionValid(transactionId, result.amount(), result.donorName())) {
+                if (!plugin.getTransactionRepository().isTransactionValid(transactionId, result.amount(), result.donorName())) {
                     plugin.getLogger().warning("Received potential replay attack or unrecorded transaction: " + transactionId + " from " + result.donorName());
                     sendResponse(exchange, 403, "Forbidden - Transaction used or invalid");
                     return;
                 }
 
                 // Success - Verification Passed
-                plugin.getLogger().info("Verified donation: " + result.donorName() + " donated Rp" + plugin.formatIndonesianNumber(result.amount()) + " (tx: " + transactionId + ")");
+                plugin.getLogger().info("Verified donation: " + result.donorName() + " donated Rp" + MessageUtils.formatIndonesianNumber(result.amount()) + " (tx: " + transactionId + ")");
                 
+                // Determine if it's sandbox (usually false for webhooks, but safety first)
+                boolean isSandbox = plugin.getTransactionRepository().isSandboxTransaction(transactionId);
+
                 // Mark as completed in Ledger
-                plugin.getStorageManager().markTransactionUsed(transactionId);
+                plugin.getTransactionRepository().markTransactionUsed(transactionId);
+
+                // Process Rewards and Notifications
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    plugin.getDonationService().fulfillDonation(
+                        result.donorName(),
+                        result.amount(),
+                        result.donorEmail(),
+                        result.paymentMethod(),
+                        result.message(),
+                        transactionId,
+                        isSandbox
+                    );
+                });
 
                 sendResponse(exchange, 200, "OK");
 

@@ -1,5 +1,8 @@
-package click.sattr.plsDonate;
+package click.sattr.plsDonate.command;
 
+import click.sattr.plsDonate.PlsDonate;
+import click.sattr.plsDonate.util.Constants;
+import click.sattr.plsDonate.util.MessageUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -42,16 +45,16 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!(sender instanceof Player player)) {
             Map<String, String> pOnly = new HashMap<>();
-            pOnly.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-            sender.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("command-only-players", "{PREFIX} <red>Only players can execute this command.</red>"), pOnly));
+            pOnly.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+            sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("command-only-players", "{PREFIX} <red>Only players can execute this command.</red>"), pOnly));
             return true;
         }
 
         if (args.length == 0 || (args.length == 1 && args[0].equalsIgnoreCase("help"))) {
             Map<String, String> p = new HashMap<>();
-            p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-            p.put("{COMMAND}", label);
-            plugin.sendLangMessageList(player, "donation-help", p);
+            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+            p.put(Constants.COMMAND, label);
+            MessageUtils.sendLangMessageList(player, plugin, "donation-help", p);
             return true;
         }
 
@@ -67,34 +70,34 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             } else {
                 // Return invalid usage as requested to keep regular players unaware
                 Map<String, String> p = new HashMap<>();
-                p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-                p.put("{COMMAND}", label);
-                player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("invalid-usage", "{PREFIX} <red>Invalid usage. <reset>try to run <yellow>/donate help<reset> for help"), p));
+                p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                p.put(Constants.COMMAND, label);
+                player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-usage", "{PREFIX} <red>Invalid usage. <reset>try to run <yellow>/donate help<reset> for help"), p));
                 return true;
             }
         }
 
         // Cooldown Check
-        if (!player.hasPermission("plsdonate.cooldown.bypass")) {
+        if (!player.hasPermission(Constants.PERM_COOLDOWN_BYPASS)) {
             long lastUsage = cooldowns.getOrDefault(player.getUniqueId(), 0L);
-            int cooldownSeconds = plugin.getConfig().getInt("donate.cooldown", 10);
+            int cooldownSeconds = plugin.getConfig().getInt(Constants.CONF_DONATE_COOLDOWN, 10);
             long currentTime = System.currentTimeMillis();
 
             if (currentTime - lastUsage < (cooldownSeconds * 1000L)) {
                 long remaining = (cooldownSeconds * 1000L - (currentTime - lastUsage)) / 1000L;
                 Map<String, String> p = new HashMap<>();
-                p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-                p.put("{TIME}", String.valueOf(remaining + 1));
-                player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("cooldown-error", "{PREFIX} <white>Sorry, you're still in <yellow>{TIME}s <white>cooldown"), p));
+                p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                p.put(Constants.TIME, String.valueOf(remaining + 1));
+                player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("cooldown-error", "{PREFIX} <white>Sorry, you're still in <yellow>{TIME}s <white>cooldown"), p));
                 return true;
             }
         }
 
         if (args.length < 3) {
             Map<String, String> p = new HashMap<>();
-            p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-            p.put("{COMMAND}", label);
-            player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("invalid-usage", "{PREFIX} <red>Invalid usage. <reset>try to run <yellow>/donate help<reset> for help"), p));
+            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+            p.put(Constants.COMMAND, label);
+            player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-usage", "{PREFIX} <red>Invalid usage. <reset>try to run <yellow>/donate help<reset> for help"), p));
             return true;
         }
 
@@ -104,29 +107,29 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             amount = Double.parseDouble(args[0]);
         } catch (NumberFormatException e) {
             Map<String, String> p = new HashMap<>();
-            p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-            player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("general-error", "{PREFIX} <red>Something wrong with the donation system! please contact admin"), p));
+            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+            player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("general-error", "{PREFIX} <red>Something wrong with the donation system! please contact admin"), p));
             return true;
         }
 
-        double minConfig = plugin.getConfig().getDouble("donate.amount.min", 1000);
-        double maxConfig = plugin.getConfig().getDouble("donate.amount.max", 10000000);
+        double minConfig = plugin.getConfig().getDouble(Constants.CONF_DONATE_MIN_AMOUNT, 1000);
+        double maxConfig = plugin.getConfig().getDouble(Constants.CONF_DONATE_MAX_AMOUNT, 10000000);
 
         if (amount < minConfig) {
             Map<String, String> p = new HashMap<>();
-            p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-            p.put("{AMOUNT}", String.valueOf((long) minConfig));
-            p.put("{AMOUNT_FORMATTED}", plugin.formatIndonesianNumber(minConfig));
-            player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("min-donation-error", "{PREFIX} <white>Sorry, <red>minimum <white>amount of donation is <yellow>{AMOUNT_FORMATTED}"), p));
+            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+            p.put(Constants.AMOUNT, String.valueOf((long) minConfig));
+            p.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatIndonesianNumber(minConfig));
+            player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("min-donation-error", "{PREFIX} <white>Sorry, <red>minimum <white>amount of donation is <yellow>{AMOUNT_FORMATTED}"), p));
             return true;
         }
 
         if (amount > maxConfig) {
             Map<String, String> p = new HashMap<>();
-            p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-            p.put("{AMOUNT}", String.valueOf((long) maxConfig));
-            p.put("{AMOUNT_FORMATTED}", plugin.formatIndonesianNumber(maxConfig));
-            player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("max-donation-error", "{PREFIX} <white>Sorry, <red>maximum <white>amount of donation is <yellow>{AMOUNT_FORMATTED}"), p));
+            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+            p.put(Constants.AMOUNT, String.valueOf((long) maxConfig));
+            p.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatIndonesianNumber(maxConfig));
+            player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("max-donation-error", "{PREFIX} <white>Sorry, <red>maximum <white>amount of donation is <yellow>{AMOUNT_FORMATTED}"), p));
             return true;
         }
 
@@ -134,8 +137,8 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         String email = args[1];
         if (!EMAIL_PATTERN.matcher(email).matches() || email.length() > 64) {
             Map<String, String> p = new HashMap<>();
-            p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-            player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("invalid-email", "{PREFIX} <white>Please <red>provide <white>a valid email <gray>example: (your@gmail.com)"), p));
+            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+            player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-email", "{PREFIX} <white>Please <red>provide <white>a valid email <gray>example: (your@gmail.com)"), p));
             return true;
         }
 
@@ -143,22 +146,22 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         String method = args[2].toLowerCase();
         if (!method.equals("qris") && !method.equals("gopay") && !method.equals("paypal")) {
             Map<String, String> p = new HashMap<>();
-            p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-            player.sendMessage(plugin.parseMessage("{PREFIX} <red>Invalid payment method! <yellow>Options: qris, gopay, paypal", p));
+            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+            player.sendMessage(MessageUtils.parseMessage("{PREFIX} <red>Invalid payment method! <yellow>Options: qris, gopay, paypal", p));
             return true;
         }
 
         if (method.equals("gopay") && amount < 10000) {
             Map<String, String> p = new HashMap<>();
-            p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-            player.sendMessage(plugin.parseMessage("{PREFIX} <red>Minimum donation for GoPay is Rp10.000", p));
+            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+            player.sendMessage(MessageUtils.parseMessage("{PREFIX} <red>Minimum donation for GoPay is Rp10.000", p));
             return true;
         }
 
         if (method.equals("paypal") && amount < 50000) {
             Map<String, String> p = new HashMap<>();
-            p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-            player.sendMessage(plugin.parseMessage("{PREFIX} <red>Minimum donation for PayPal is Rp50.000", p));
+            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+            player.sendMessage(MessageUtils.parseMessage("{PREFIX} <red>Minimum donation for PayPal is Rp50.000", p));
             return true;
         }
 
@@ -172,15 +175,15 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             messageStr = sb.toString().trim();
         }
 
-        int configMaxMsgLen = plugin.getConfig().getInt("donate.message.max-length", 255);
+        int configMaxMsgLen = plugin.getConfig().getInt(Constants.CONF_DONATE_MAX_MESSAGE, 255);
         int platformMaxMsgLen = plugin.getDonationPlatform().getMaxMessageLength();
         int maxMsgLen = Math.min(Math.min(configMaxMsgLen, platformMaxMsgLen), 190);
         
         if (messageStr.length() > maxMsgLen) {
             Map<String, String> p = new HashMap<>();
-            p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
+            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
             p.put("{LIMIT}", String.valueOf(maxMsgLen));
-            player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("message-length-error", "{PREFIX} <white>Sorry, <red>maximal length <white>of the message is <yellow>{LIMIT} Character. <white>Please shorten your message."), p));
+            player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("message-length-error", "{PREFIX} <white>Sorry, <red>maximal length <white>of the message is <yellow>{LIMIT} Character. <white>Please shorten your message."), p));
             return true;
         }
 
@@ -188,12 +191,12 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
 
         // 5. Confirmation System
-        boolean requireConfirmation = plugin.getConfig().getBoolean("donate.confirmation", true);
+        boolean requireConfirmation = plugin.getConfig().getBoolean(Constants.CONF_DONATE_CONFIRMATION, true);
 
         if (!requireConfirmation) {
             processDonation(player, amount, email, method, messageStr, plugin);
         } else {
-            if (plugin.getBedrockFormHandler() != null && plugin.getConfig().getBoolean("bedrock-support", false) && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
+            if (plugin.getBedrockFormHandler() != null && plugin.getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false) && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
                 plugin.getBedrockFormHandler().sendConfirmationForm(player, amount, email, method, messageStr, false, false);
                 return true;
             }
@@ -204,7 +207,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             String hash = md5(rawString);
 
             if (hash == null) {
-                plugin.sendLangMessage(player, "general-error");
+                MessageUtils.sendLangMessage(player, plugin, "general-error", null);
                 return true;
             }
 
@@ -213,12 +216,12 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
 
             pendingRequests.put(hash, new DonationRequest(player.getUniqueId(), amount, email, method, messageStr));
 
-            Map<String, String> p = plugin.getDonationPlaceholders(player.getName(), amount, email, method, messageStr);
-            p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-            p.put("{COMMAND}", "/" + label + " " + hash);
+            Map<String, String> p = MessageUtils.getDonationPlaceholders(amount, player.getName(), email, method, messageStr);
+            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+            p.put(Constants.COMMAND, "/" + label + " " + hash);
 
-            plugin.sendLangMessageList(player, "donation-confirmation-java", p);
-            plugin.playConfigSounds(player, "sound-effects.donation-confirmation");
+            MessageUtils.sendLangMessageList(player, plugin, "donation-confirmation-java", p);
+            MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-confirmation");
         }
 
         return true;
@@ -242,13 +245,13 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
 
     public static void processDonation(Player player, double amount, String email, String method, String message, PlsDonate plugin) {
         // Sound: donation-processed
-        plugin.playConfigSounds(player, "sound-effects.donation-processed");
+        MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-processed");
 
         plugin.getDonationPlatform().createDonation(player.getName(), email, amount, method, message).thenAccept(response -> {
             if (response.success()) {
                 // Log request to ledger to prevent replay
                 if (response.transactionId() != null) {
-                    plugin.getStorageManager().createDonationRequest(response.transactionId(), amount, player.getName(), false);
+                    plugin.getTransactionRepository().createDonationRequest(response.transactionId(), amount, player.getName(), false);
 
                 }
 
@@ -257,7 +260,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
                         player.getName(),
                         email,
                         amount,
-                        plugin.formatIndonesianNumber(amount),
+                        MessageUtils.formatIndonesianNumber(amount),
                         method,
                         response.paymentUrl(),
                         message
@@ -265,16 +268,16 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     Map<String, String> succP = new HashMap<>();
-                    succP.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-                    player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("donation-email-sent", "{PREFIX} <green>A payment link has been sent to your email!</green>"), succP));
-                    plugin.playConfigSounds(player, "sound-effects.donation-success");
+                    succP.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("donation-email-sent", "{PREFIX} <green>A payment link has been sent to your email!</green>"), succP));
+                    MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-success");
                 });
             } else {
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     Map<String, String> errP = new HashMap<>();
-                    errP.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-                    errP.put("{ERROR}", response.message());
-                    player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("api-error", "{PREFIX} <red>API Error: {ERROR}</red>"), errP));
+                    errP.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    errP.put(Constants.ERROR, response.message());
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("api-error", "{PREFIX} <red>API Error: {ERROR}</red>"), errP));
                 });
             }
         });
@@ -293,7 +296,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             String sub = args[0].toLowerCase();
             if ("help".startsWith(sub)) completions.add("help");
             
-            double min = plugin.getConfig().getDouble("donate.amount.min", 1000);
+            double min = plugin.getConfig().getDouble(Constants.CONF_DONATE_MIN_AMOUNT, 1000);
             long[] suggestions = { (long) min, (long) min + 5000, (long) min + 10000 };
             for (long s : suggestions) {
                 if (String.valueOf(s).startsWith(sub)) completions.add(String.valueOf(s));

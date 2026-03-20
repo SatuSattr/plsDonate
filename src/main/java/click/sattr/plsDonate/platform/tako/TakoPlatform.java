@@ -2,6 +2,7 @@ package click.sattr.plsDonate.platform.tako;
 
 import click.sattr.plsDonate.PlsDonate;
 import click.sattr.plsDonate.platform.DonationPlatform;
+import click.sattr.plsDonate.util.Constants;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -42,9 +43,8 @@ public class TakoPlatform implements DonationPlatform {
 
     @Override
     public CompletableFuture<DonationResponse> createDonation(String name, String email, double amount, String paymentMethod, String message) {
-        // Fallback for older configs
-        String apiKey = plugin.getConfig().getString("platform.tako.api-key", plugin.getConfig().getString("api.key", ""));
-        String creator = plugin.getConfig().getString("platform.tako.creator", plugin.getConfig().getString("api.creator", DEFAULT_CREATOR));
+        String apiKey = plugin.getConfig().getString(Constants.CONF_TAKO_KEY, "");
+        String creator = plugin.getConfig().getString(Constants.CONF_TAKO_CREATOR, DEFAULT_CREATOR);
 
         if (apiKey.isEmpty() || apiKey.equals("your_secret_api_key_here")) {
             return CompletableFuture.completedFuture(new DonationResponse(false, "API Key is not configured properly.", null, null));
@@ -106,8 +106,7 @@ public class TakoPlatform implements DonationPlatform {
 
     @Override
     public WebhookResult parseWebhook(String body, Headers headers) {
-        // Fallback for older configs
-        String token = plugin.getConfig().getString("platform.tako.webhook-token", plugin.getConfig().getString("webhook.token", ""));
+        String token = plugin.getConfig().getString(Constants.CONF_TAKO_TOKEN, "");
 
         if (token.isEmpty() || token.equals("your_secret_token_here")) {
             return new WebhookResult(false, "webhook.token is empty/invalid. Setup incomplete.", null, null, null, 0, null, null);
@@ -164,7 +163,12 @@ public class TakoPlatform implements DonationPlatform {
             }
 
             String calculatedSignature = hexString.toString();
-            return calculatedSignature.equalsIgnoreCase(receivedSignature);
+            
+            // Timing-safe comparison
+            return java.security.MessageDigest.isEqual(
+                calculatedSignature.getBytes(StandardCharsets.UTF_8),
+                receivedSignature.getBytes(StandardCharsets.UTF_8)
+            );
         } catch (Exception e) {
             return false;
         }

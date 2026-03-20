@@ -1,5 +1,8 @@
-package click.sattr.plsDonate;
+package click.sattr.plsDonate.manager;
 
+import click.sattr.plsDonate.PlsDonate;
+import click.sattr.plsDonate.util.Constants;
+import click.sattr.plsDonate.util.MessageUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.geysermc.cumulus.form.SimpleForm;
@@ -41,7 +44,7 @@ public class BedrockFormHandler {
              );
         }
 
-        Map<String, String> p = plugin.getDonationPlaceholders(player.getName(), amount, email, method, message);
+        Map<String, String> p = MessageUtils.getDonationPlaceholders(amount, player.getName(), email, method, message);
 
         for (String line : rawContent) {
              String processedLine = line;
@@ -49,7 +52,7 @@ public class BedrockFormHandler {
                  processedLine = processedLine.replace(entry.getKey(), entry.getValue());
              }
              
-             net.kyori.adventure.text.Component component = miniMessage.deserialize(processedLine);
+             net.kyori.adventure.text.Component component = MessageUtils.parseMessage(processedLine);
              String legacyText = legacySection.serialize(component);
              contentInfo.append(legacyText).append("\n");
         }
@@ -73,61 +76,40 @@ public class BedrockFormHandler {
         FloodgateApi.getInstance().sendForm(player.getUniqueId(), form);
         
         // Sound: donation-confirmation
-        plugin.playConfigSounds(player, "sound-effects.donation-confirmation");
+        MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-confirmation");
     }
 
     private void processSimulatedDonation(Player player, double amount, String email, String method, String message, boolean isSandbox) {
-        String formattedAmount = plugin.formatIndonesianNumber(amount);
         String txId = (isSandbox ? "FAKETX-" : "PUSHTX-") + System.currentTimeMillis();
 
-        // 1. Save to Database
-        plugin.getStorageManager().createDonationRequest(txId, amount, player.getName(), isSandbox);
-        plugin.getStorageManager().markTransactionUsed(txId);
-
-        // 2. Broadcast Notifications
-        if (plugin.getConfig().getBoolean("donate.notification", true)) {
-            Map<String, String> p = plugin.getDonationPlaceholders(player.getName(), amount, email, method, message);
-            p.put("{ID}", txId);
-            p.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-
-            plugin.sendLangMessageList(Bukkit.getConsoleSender(), "donation-notification", p);
-            for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-                plugin.sendLangMessageList(onlinePlayer, "donation-notification", p);
-                plugin.playConfigSounds(onlinePlayer, "sound-effects.donation-received");
-            }
-        }
-
-        // 3. Trigger processing system
-        if (plugin.getTriggersManager() != null) {
-            plugin.getTriggersManager().processDonation(player.getName(), amount, formattedAmount, message, method, txId);
-        }
+        plugin.getDonationService().fulfillDonation(player.getName(), amount, email, method, message, txId, isSandbox);
 
         Map<String, String> fpP = new HashMap<>();
-        fpP.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
+        fpP.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
         String langKey = isSandbox ? "fake-donation-processed" : "push-donation-processed";
         String defaultMsg = isSandbox ? "{PREFIX} <green>Fake donation form successfully processed!</green>" : "{PREFIX} <green>Donation form successfully pushed!</green>";
-        player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString(langKey, defaultMsg), fpP));
+        player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString(langKey, defaultMsg), fpP));
     }
 
     private void processBedrockDonation(Player player, double amount, String email, String method, String message) {
         // Sound: donation-processed
-        plugin.playConfigSounds(player, "sound-effects.donation-processed");
+        MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-processed");
         
         Map<String, String> prcP = new HashMap<>();
-        prcP.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-        player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("donation-processing", "{PREFIX} <gray>Processing your donation form... Please check your email shortly!</gray>"), prcP));
+        prcP.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+        player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("donation-processing", "{PREFIX} <gray>Processing your donation form... Please check your email shortly!</gray>"), prcP));
 
         plugin.getDonationPlatform().createDonation(player.getName(), email, amount, method, message).thenAccept(response -> {
             if (response.success()) {
                 // Log request to ledger
-                plugin.getStorageManager().createDonationRequest(response.transactionId(), amount, player.getName(), false);
+                plugin.getTransactionRepository().createDonationRequest(response.transactionId(), amount, player.getName(), false);
 
                 // Send Email to Bedrock Player
                 plugin.getEmailManager().sendPaymentEmail(
                         player.getName(), 
                         email, 
                         amount, 
-                        plugin.formatIndonesianNumber(amount), 
+                        MessageUtils.formatIndonesianNumber(amount), 
                         method,
                         response.paymentUrl(),
                         message
@@ -135,17 +117,17 @@ public class BedrockFormHandler {
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     Map<String, String> succP = new HashMap<>();
-                    succP.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-                    player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("donation-email-sent", "{PREFIX} <green>A payment link has been sent to your email!</green>"), succP));
+                    succP.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("donation-email-sent", "{PREFIX} <green>A payment link has been sent to your email!</green>"), succP));
                     // Sound: donation-success
-                    plugin.playConfigSounds(player, "sound-effects.donation-success");
+                    MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-success");
                 });
             } else {
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     Map<String, String> errP = new HashMap<>();
-                    errP.put("{PREFIX}", plugin.getLangConfig().getString("prefix", "[plsDonate]"));
-                    errP.put("{ERROR}", response.message());
-                    player.sendMessage(plugin.parseMessage(plugin.getLangConfig().getString("api-error", "{PREFIX} <red>API Error: {ERROR}</red>"), errP));
+                    errP.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    errP.put(Constants.ERROR, response.message());
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("api-error", "{PREFIX} <red>API Error: {ERROR}</red>"), errP));
                 });
             }
         });

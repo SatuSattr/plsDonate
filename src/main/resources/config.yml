@@ -86,7 +86,7 @@ email:
       host: "smtp.gmail.com"
       port: 587
       user: "email@gmail.com"
-      pass: "your-app-password"
+      pass: "your_app_password"
       secure: false
 
       from:

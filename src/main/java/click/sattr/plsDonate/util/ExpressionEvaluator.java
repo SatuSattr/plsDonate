@@ -1,4 +1,4 @@
-package click.sattr.plsDonate;
+package click.sattr.plsDonate.util;
 
 public class ExpressionEvaluator {
 

@@ -1,5 +1,6 @@
-package click.sattr.plsDonate;
+package click.sattr.plsDonate.manager;
 
+import click.sattr.plsDonate.PlsDonate;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 
