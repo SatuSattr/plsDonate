@@ -83,6 +83,9 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         // Now reload to make sure we have the latest data
         reloadConfig();
         
+        // Save default templates
+        saveDefaultTemplates();
+        
         // Auto-toggle bedrock-support if Geyser and Floodgate are detected
         checkAndAutoEnableBedrockSupport();
         
@@ -298,6 +301,18 @@ public final class PlsDonate extends JavaPlugin implements Listener {
     public void loadActivePlatform() {
         donationPlatform = new TakoPlatform(this);
         getLogger().info("Donation Platform: Tako.id Enabled (Express Version)");
+    }
+
+    private void saveDefaultTemplates() {
+        File templatesFolder = new File(getDataFolder(), "templates");
+        if (!templatesFolder.exists()) {
+            templatesFolder.mkdirs();
+        }
+
+        File paymentTemplate = new File(templatesFolder, "payment.html");
+        if (!paymentTemplate.exists()) {
+            saveResource("templates/payment.html", false);
+        }
     }
 
     @EventHandler

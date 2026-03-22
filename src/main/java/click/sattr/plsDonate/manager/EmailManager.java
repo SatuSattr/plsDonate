@@ -149,14 +149,32 @@ public class EmailManager {
     }
 
     private String loadTemplate() throws IOException {
-        String customTemplate = plugin.getConfig().getString("email.body-template", "");
-        if (customTemplate != null && !customTemplate.trim().isEmpty()) {
-            return customTemplate;
+        String templateName = plugin.getConfig().getString("email.body-template", "payment.html");
+        if (templateName == null || templateName.trim().isEmpty()) {
+            templateName = "payment.html";
         }
 
-        try (InputStream is = getClass().getResourceAsStream("/templates/payment.html")) {
+        // Enforce .html extension
+        if (!templateName.toLowerCase().endsWith(".html")) {
+            plugin.getLogger().warning("Email template '" + templateName + "' in config.yml does not end with .html! Falling back to payment.html");
+            templateName = "payment.html";
+        }
+
+        File templateFile = new File(plugin.getDataFolder(), "templates/" + templateName);
+        if (templateFile.exists()) {
+            return java.nio.file.Files.readString(templateFile.toPath(), StandardCharsets.UTF_8);
+        }
+
+        // Fallback to JAR resource if file doesn't exist in data folder
+        try (InputStream is = plugin.getResource("templates/" + templateName)) {
             if (is == null) {
-                return "<p>Hi <b>{PLAYER}</b>,</p><p>Please pay <b>Rp{AMOUNT_FORMATTED}</b> here: <a href=\"{LINK}\">{LINK}</a></p>";
+                // Last ditch effort: try the default payment.html if they specified a non-existent file
+                try (InputStream defaultIs = plugin.getResource("templates/payment.html")) {
+                    if (defaultIs == null) {
+                        return "<p>Hi <b>{PLAYER}</b>,</p><p>Please pay <b>Rp{AMOUNT_FORMATTED}</b> here: <a href=\"{LINK}\">{LINK}</a></p>";
+                    }
+                    return new String(defaultIs.readAllBytes(), StandardCharsets.UTF_8);
+                }
             }
             return new String(is.readAllBytes(), StandardCharsets.UTF_8);
         }

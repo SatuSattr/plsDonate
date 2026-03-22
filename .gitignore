@@ -5,6 +5,7 @@ dependency-reduced-pom.xml
 
 # IntelliJ IDEA
 .idea/
+.vscode/
 *.iml
 
 
@@ -15,3 +16,5 @@ Thumbs.db
 # Agent/Skills files
 .agents/
 skills-lock.json
+GEMINI.md
+.gemini/

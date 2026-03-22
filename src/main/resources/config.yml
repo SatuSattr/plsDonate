@@ -73,10 +73,9 @@ email:
   from-name: "plsDonate"
   subject: "Your Donation Payment Link - plsDonate"
 
-  # Custom HTML body for the email. Must be ONE LINE.
-  # If empty (""), it will use the default template from the plugin.
+  # Custom HTML template for the email (found in templates/ folder).
   # Supported Placeholders: {PLAYER}, {PLAYER_UPPERCASED}, {PLAYER_LOWERCASED}, {AMOUNT}, {AMOUNT_FORMATTED}, {LINK}, {MESSAGE}, {METHOD}, {METHOD_LOWERCASED}, {METHOD_UPPERCASED}
-  body-template: ""
+  body-template: "payment.html"
 
   # Fallback SMTP System
   # The plugin will attempt to use '1'. If it fails, it will attempt to fallback to '2', and so on.
