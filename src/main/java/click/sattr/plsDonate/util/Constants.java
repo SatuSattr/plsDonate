@@ -46,8 +46,6 @@ public final class Constants {
     
     // Formatting Configuration
     public static final String CONF_FORMAT_LOCALE = "format.locale";
-    public static final String CONF_FORMAT_SYMBOL = "format.currency-symbol";
-    public static final String CONF_FORMAT_SYMBOL_FRONT = "format.symbol-at-front";
 
     // Defaults
     public static final String DEFAULT_PREFIX = "<gray>[<green>plsDonate<gray>]<reset>";

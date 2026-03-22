@@ -102,13 +102,8 @@ public final class MessageUtils {
 
     public static String formatAmount(PlsDonate plugin, double number) {
         String localeTag = plugin.getConfig().getString(Constants.CONF_FORMAT_LOCALE, "id-ID");
-        String symbol = plugin.getConfig().getString(Constants.CONF_FORMAT_SYMBOL, "Rp");
-        boolean symbolAtFront = plugin.getConfig().getBoolean(Constants.CONF_FORMAT_SYMBOL_FRONT, true);
-
         NumberFormat nf = NumberFormat.getInstance(Locale.forLanguageTag(localeTag));
-        String formattedNumber = nf.format(number);
-
-        return symbolAtFront ? symbol + formattedNumber : formattedNumber + symbol;
+        return nf.format(number);
     }
 
     public static Map<String, String> getDonationPlaceholders(PlsDonate plugin, double amount, String donorName, String email, String method, String message) {

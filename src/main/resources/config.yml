@@ -7,25 +7,16 @@ enabled: true
 # Available languages: en-US
 language: "en-US"
 
-# Global Number and Currency Formatting
+# Global Number Formatting
 format:
-  # The locale used for number formatting (e.g., id-ID for Indonesia, en-US for USA).
+  # The locale used for number formatting.
   # This determines the decimal and thousand separators.
-  # Common Locales:
-  # - id-ID : 1.000.000 (Indonesian)
-  # - en-US : 1,000,000 (US English)
-  # - en-GB : 1,000,000 (UK English)
-  # - de-DE : 1.000.000 (German)
-  # - fr-FR : 1 000 000 (French)
-  # - es-ES : 1.000.000 (Spanish)
-  # - ja-JP : 1,000,000 (Japanese)
+  # Common Locales by Format:
+  # - id-ID 1.000.000 (Indonesian)
+  # - en-US 1,000,000 (US English)
+  # - fr-FR 1 000 000 (French)
+  # - de-CH 1'000'000 (Swiss German)
   locale: "id-ID"
-  
-  # The currency symbol displayed with the amount.
-  currency-symbol: "Rp"
-  
-  # Whether the symbol should be placed before the number (true) or after (false).
-  symbol-at-front: true
 
 # Tako.id API Integration
 tako:
