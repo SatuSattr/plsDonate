@@ -64,7 +64,14 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args[0].equalsIgnoreCase("leaderboard")) {
-            displayLeaderboard(sender);
+            int page = 1;
+            if (args.length >= 2) {
+                try {
+                    page = Integer.parseInt(args[1]);
+                    if (page < 1) page = 1;
+                } catch (NumberFormatException ignored) {}
+            }
+            displayLeaderboard(sender, page);
             return true;
         }
 
@@ -198,25 +205,39 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private void displayLeaderboard(CommandSender sender) {
-        List<TransactionRepository.LeaderboardEntry> entries = plugin.getTransactionRepository().getLeaderboard(10);
+    private void displayLeaderboard(CommandSender sender, int page) {
+        int limit = 11;
+        int offset = (page - 1) * limit;
+        List<TransactionRepository.LeaderboardEntry> entries = plugin.getTransactionRepository().getLeaderboard(limit, offset);
+        int totalCount = plugin.getTransactionRepository().getLeaderboardCount();
+        int totalPages = (int) Math.ceil((double) totalCount / limit);
+
         Map<String, String> p = new HashMap<>();
         p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+        p.put("{PAGE}", String.valueOf(page));
+        p.put("{TOTAL_PAGES}", String.valueOf(totalPages));
         
-        sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("leaderboard-header", "<gray>------ <gold>Donation Leaderboard <gray>------"), p));
+        sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("leaderboard-header", "<gray>------ <gold>Donation Leaderboard (Page {PAGE}/{TOTAL_PAGES}) <gray>------"), p));
         if (entries.isEmpty()) {
             sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("leaderboard-empty", "<gray>No donation records found."), p));
         } else {
             for (int i = 0; i < entries.size(); i++) {
                 TransactionRepository.LeaderboardEntry entry = entries.get(i);
                 Map<String, String> entryP = new HashMap<>(p);
-                entryP.put(Constants.RANK, String.valueOf(i + 1));
+                entryP.put(Constants.RANK, String.valueOf(offset + i + 1));
                 entryP.put("{NAME}", entry.name());
                 entryP.put(Constants.AMOUNT_FORMATTED, entry.amountFormatted());
                 sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("leaderboard-format", "<yellow>{RANK}. <white>{NAME} <gray>- <green>{AMOUNT_FORMATTED}"), entryP));
             }
         }
-        sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("leaderboard-footer", "<gray>----------------------------"), p));
+
+        if (page < totalPages) {
+            String footer = plugin.getLangConfig().getString("leaderboard-footer", "<gray>----------------------------");
+            String nextBtn = " <yellow><click:run_command:\"/pdn leaderboard " + (page + 1) + "\"><hover:show_text:\"<gray>Click to view page " + (page + 1) + "\">[Next Page »]</hover></click>";
+            sender.sendMessage(MessageUtils.parseMessage(footer + nextBtn, p));
+        } else {
+            sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("leaderboard-footer", "<gray>----------------------------"), p));
+        }
     }
 
     private void displayMilestone(CommandSender sender) {
@@ -300,6 +321,10 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             if ("leaderboard".startsWith(sub)) completions.add("leaderboard");
             if ("milestone".startsWith(sub)) completions.add("milestone");
             if ("help".startsWith(sub)) completions.add("help");
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("leaderboard")) {
+            completions.add("1");
+            completions.add("2");
+            completions.add("3");
         } else if (args.length > 1 && (args[0].equalsIgnoreCase("fakedonate") || args[0].equalsIgnoreCase("pushdonate")) && sender.hasPermission(Constants.PERM_ADMIN)) {
             if (args.length == 2) {
                 String sub = args[1].toLowerCase();

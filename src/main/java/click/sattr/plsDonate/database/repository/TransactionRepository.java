@@ -74,12 +74,17 @@ public class TransactionRepository {
     }
 
     public List<LeaderboardEntry> getLeaderboard(int limit) {
+        return getLeaderboard(limit, 0);
+    }
+
+    public List<LeaderboardEntry> getLeaderboard(int limit, int offset) {
         List<LeaderboardEntry> entries = new ArrayList<>();
         String sql = "SELECT donor_name, SUM(amount) as total_amount FROM transactions " +
                      "WHERE status = 'COMPLETED' AND is_sandbox = 0 " +
-                     "GROUP BY donor_name ORDER BY total_amount DESC LIMIT ?";
+                     "GROUP BY donor_name ORDER BY total_amount DESC LIMIT ? OFFSET ?";
         try (Connection conn = databaseManager.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, limit);
+            ps.setInt(2, offset);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String name = rs.getString("donor_name");
@@ -91,6 +96,20 @@ public class TransactionRepository {
             plugin.getLogger().severe("Failed to fetch leaderboard: " + e.getMessage());
         }
         return entries;
+    }
+
+    public int getLeaderboardCount() {
+        String sql = "SELECT COUNT(DISTINCT donor_name) FROM transactions WHERE status = 'COMPLETED' AND is_sandbox = 0";
+        try (Connection conn = databaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to fetch leaderboard count: " + e.getMessage());
+        }
+        return 0;
     }
 
     public double getTotalDonations() {
