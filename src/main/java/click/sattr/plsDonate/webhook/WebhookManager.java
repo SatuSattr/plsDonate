@@ -89,7 +89,7 @@ public class WebhookManager {
                 }
 
                 // Success - Verification Passed
-                plugin.getLogger().info("Verified donation: " + result.donorName() + " donated Rp" + MessageUtils.formatIndonesianNumber(result.amount()) + " (tx: " + transactionId + ")");
+                plugin.getLogger().info("Verified donation: " + result.donorName() + " donated " + MessageUtils.formatAmount(plugin, result.amount()) + " (tx: " + transactionId + ")");
                 
                 // Determine if it's sandbox (usually false for webhooks, but safety first)
                 boolean isSandbox = plugin.getTransactionRepository().isSandboxTransaction(transactionId);

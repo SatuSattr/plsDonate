@@ -7,6 +7,18 @@ enabled: true
 # Available languages: en-US
 language: "en-US"
 
+# Global Number and Currency Formatting
+format:
+  # The locale used for number formatting (e.g., id-ID for Indonesia, en-US for USA).
+  # This determines the decimal and thousand separators.
+  locale: "id-ID"
+  
+  # The currency symbol displayed with the amount.
+  currency-symbol: "Rp"
+  
+  # Whether the symbol should be placed before the number (true) or after (false).
+  symbol-at-front: true
+
 # Tako.id API Integration
 tako:
   # Your creator name on tako.id.

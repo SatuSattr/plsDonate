@@ -43,6 +43,11 @@ public final class Constants {
     public static final String CONF_MILESTONE_TARGET = "tako.milestone.target";
     public static final String CONF_MILESTONE_TITLE = "tako.milestone.title";
     public static final String CONF_BEDROCK_SUPPORT = "bedrock-support";
+    
+    // Formatting Configuration
+    public static final String CONF_FORMAT_LOCALE = "format.locale";
+    public static final String CONF_FORMAT_SYMBOL = "format.currency-symbol";
+    public static final String CONF_FORMAT_SYMBOL_FRONT = "format.symbol-at-front";
 
     // Defaults
     public static final String DEFAULT_PREFIX = "<gray>[<green>plsDonate<gray>]<reset>";

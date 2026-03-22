@@ -100,18 +100,24 @@ public final class MessageUtils {
         }
     }
 
-    public static String formatIndonesianNumber(double number) {
-        NumberFormat nf = NumberFormat.getInstance(Locale.forLanguageTag("id-ID"));
-        return nf.format(number);
+    public static String formatAmount(PlsDonate plugin, double number) {
+        String localeTag = plugin.getConfig().getString(Constants.CONF_FORMAT_LOCALE, "id-ID");
+        String symbol = plugin.getConfig().getString(Constants.CONF_FORMAT_SYMBOL, "Rp");
+        boolean symbolAtFront = plugin.getConfig().getBoolean(Constants.CONF_FORMAT_SYMBOL_FRONT, true);
+
+        NumberFormat nf = NumberFormat.getInstance(Locale.forLanguageTag(localeTag));
+        String formattedNumber = nf.format(number);
+
+        return symbolAtFront ? symbol + formattedNumber : formattedNumber + symbol;
     }
 
-    public static Map<String, String> getDonationPlaceholders(double amount, String donorName, String email, String method, String message) {
+    public static Map<String, String> getDonationPlaceholders(PlsDonate plugin, double amount, String donorName, String email, String method, String message) {
         Map<String, String> p = new HashMap<>();
         p.put(Constants.PLAYER, donorName);
         p.put("{PLAYER_UPPERCASED}", donorName.toUpperCase());
         p.put("{PLAYER_LOWERCASED}", donorName.toLowerCase());
         p.put(Constants.AMOUNT, String.valueOf((long) amount));
-        p.put(Constants.AMOUNT_FORMATTED, formatIndonesianNumber(amount));
+        p.put(Constants.AMOUNT_FORMATTED, formatAmount(plugin, amount));
         p.put(Constants.EMAIL, email != null ? email : "");
         
         String msg = (message == null || message.isEmpty()) ? "No message" : message;

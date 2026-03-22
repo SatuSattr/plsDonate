@@ -28,7 +28,7 @@ public class DonationService {
      * @param isSandbox  Whether the donation is in sandbox mode.
      */
     public void fulfillDonation(String playerName, double amount, String email, String method, String message, String transactionId, boolean isSandbox) {
-        String formattedAmount = MessageUtils.formatIndonesianNumber(amount);
+        String formattedAmount = MessageUtils.formatAmount(plugin, amount);
 
         // 1. Save to Database
         plugin.getTransactionRepository().createDonationRequest(transactionId, amount, playerName, isSandbox);
@@ -36,7 +36,7 @@ public class DonationService {
 
         // 2. Broadcast Notifications
         if (plugin.getConfig().getBoolean(Constants.CONF_DONATE_NOTIFICATION, true)) {
-            Map<String, String> p = MessageUtils.getDonationPlaceholders(amount, playerName, email, method, message);
+            Map<String, String> p = MessageUtils.getDonationPlaceholders(plugin, amount, playerName, email, method, message);
             p.put(Constants.ID, transactionId);
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
 

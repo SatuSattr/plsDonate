@@ -50,9 +50,9 @@ public class PlsDonateExpansion extends PlaceholderExpansion {
                 case "milestone_current":
                     return String.valueOf((long) current);
                 case "milestone_current_formatted":
-                    return MessageUtils.formatIndonesianNumber(current);
+                    return MessageUtils.formatAmount(plugin, current);
                 case "milestone_target":
-                    return MessageUtils.formatIndonesianNumber(target);
+                    return MessageUtils.formatAmount(plugin, target);
                 case "milestone_percent":
                     double percent = (current / target) * 100;
                     return String.format("%.1f", Math.min(percent, 100.0));
@@ -63,7 +63,7 @@ public class PlsDonateExpansion extends PlaceholderExpansion {
                     return MessageUtils.toLegacy(createProgressBar(Math.min(pBar, 100.0)));
                 case "milestone_remaining":
                     double remaining = target - current;
-                    return MessageUtils.formatIndonesianNumber(Math.max(remaining, 0));
+                    return MessageUtils.formatAmount(plugin, Math.max(remaining, 0));
             }
         }
 
@@ -72,7 +72,7 @@ public class PlsDonateExpansion extends PlaceholderExpansion {
             switch (params) {
                 case "player_total":
                     double total = plugin.getTransactionRepository().getPlayerTotal(player.getName());
-                    return MessageUtils.formatIndonesianNumber(total);
+                    return MessageUtils.formatAmount(plugin, total);
                 case "player_rank":
                     int rank = plugin.getTransactionRepository().getPlayerRank(player.getName());
                     return rank > 0 ? "#" + rank : "N/A";

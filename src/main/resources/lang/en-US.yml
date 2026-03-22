@@ -86,16 +86,18 @@ api-error: "{PREFIX} <red>API Error: {ERROR}</red>"
 overlay-disabled: "{PREFIX} <red>Overlay API is not configured! Please check your config.yml</red>"
 
 # Available Placeholders: {PREFIX}, {RANK}, {NAME}, {AMOUNT}, {AMOUNT_FORMATTED}
-leaderboard-header: "<gray>------ <gold>Donation Leaderboard <gray>------"
-leaderboard-format: "<yellow>{RANK}. <white>{NAME} <gray>- <green>Rp{AMOUNT_FORMATTED}"
-leaderboard-empty: "<gray>No donation records found."
-leaderboard-footer: "<gray>----------------------------"
+leaderboard-header: <gray><st>          <reset> <green>plsDonate <yellow><u>Leaderboard</u>
+  <gray><st>          <br>
+leaderboard-format: <yellow>{RANK}. <white>{NAME} <gray>- <green>Rp{AMOUNT_FORMATTED}
+leaderboard-empty: <gray>No donation records found.
+leaderboard-footer: '<br><gray><st>                                                    '
 
 # Available Placeholders: {PREFIX}, {TITLE}, {CURRENT}, {TARGET}, {CURRENT_FORMATTED}, {TARGET_FORMATTED}, {PERCENT}, {START_DATE}, {START_TIME}
-milestone-header: "<gray>------ <gold>Donation Milestone <gray>------"
-milestone-title: "  <white>Target: <yellow>{TITLE}"
-milestone-progress: "  <white>Progress: <green>Rp{CURRENT_FORMATTED} <gray>/ <red>Rp{TARGET_FORMATTED}"
-milestone-percentage: "  <white>Percentage: <aqua>{PERCENT}%"
-milestone-footer: "<gray>----------------------------"
+milestone-header: <gray><st>          <reset> <green>plsDonate <gold><u>Milestone</u>
+  <gray><st>          <br>
+milestone-title: '  <white>Title: <yellow>{TITLE}'
+milestone-progress: '  <white>Progress: <green>Rp{CURRENT_FORMATTED} <gray>/ <red>Rp{TARGET_FORMATTED}'
+milestone-percentage: '  <white>Percentage: <aqua>{PERCENT}%'
+milestone-footer: '<br><gray><st>                                              '
 
-loading-overlay: "{PREFIX} <gray>Fetching data from API... Please wait."
+loading-overlay: '{PREFIX} <gray>Fetching data from API... Please wait.'

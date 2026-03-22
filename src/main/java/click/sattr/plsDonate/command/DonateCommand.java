@@ -119,7 +119,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             Map<String, String> p = new HashMap<>();
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
             p.put(Constants.AMOUNT, String.valueOf((long) minConfig));
-            p.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatIndonesianNumber(minConfig));
+            p.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatAmount(plugin, minConfig));
             player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("min-donation-error", "{PREFIX} <white>Sorry, <red>minimum <white>amount of donation is <yellow>{AMOUNT_FORMATTED}"), p));
             return true;
         }
@@ -128,7 +128,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             Map<String, String> p = new HashMap<>();
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
             p.put(Constants.AMOUNT, String.valueOf((long) maxConfig));
-            p.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatIndonesianNumber(maxConfig));
+            p.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatAmount(plugin, maxConfig));
             player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("max-donation-error", "{PREFIX} <white>Sorry, <red>maximum <white>amount of donation is <yellow>{AMOUNT_FORMATTED}"), p));
             return true;
         }
@@ -154,14 +154,14 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         if (method.equals("gopay") && amount < 10000) {
             Map<String, String> p = new HashMap<>();
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
-            player.sendMessage(MessageUtils.parseMessage("{PREFIX} <red>Minimum donation for GoPay is Rp10.000", p));
+            player.sendMessage(MessageUtils.parseMessage("{PREFIX} <red>Minimum donation for GoPay is " + MessageUtils.formatAmount(plugin, 10000), p));
             return true;
         }
 
         if (method.equals("paypal") && amount < 50000) {
             Map<String, String> p = new HashMap<>();
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
-            player.sendMessage(MessageUtils.parseMessage("{PREFIX} <red>Minimum donation for PayPal is Rp50.000", p));
+            player.sendMessage(MessageUtils.parseMessage("{PREFIX} <red>Minimum donation for PayPal is " + MessageUtils.formatAmount(plugin, 50000), p));
             return true;
         }
 
@@ -216,7 +216,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
 
             pendingRequests.put(hash, new DonationRequest(player.getUniqueId(), amount, email, method, messageStr));
 
-            Map<String, String> p = MessageUtils.getDonationPlaceholders(amount, player.getName(), email, method, messageStr);
+            Map<String, String> p = MessageUtils.getDonationPlaceholders(plugin, amount, player.getName(), email, method, messageStr);
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
             p.put(Constants.COMMAND, "/" + label + " " + hash);
 
@@ -260,7 +260,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
                         player.getName(),
                         email,
                         amount,
-                        MessageUtils.formatIndonesianNumber(amount),
+                        MessageUtils.formatAmount(plugin, amount),
                         method,
                         response.paymentUrl(),
                         message

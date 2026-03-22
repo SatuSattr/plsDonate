@@ -84,7 +84,7 @@ public class TransactionRepository {
                 while (rs.next()) {
                     String name = rs.getString("donor_name");
                     double amount = rs.getDouble("total_amount");
-                    entries.add(new LeaderboardEntry(name, amount, MessageUtils.formatIndonesianNumber(amount)));
+                    entries.add(new LeaderboardEntry(name, amount, MessageUtils.formatAmount(plugin, amount)));
                 }
             }
         } catch (SQLException e) {
@@ -158,7 +158,7 @@ public class TransactionRepository {
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 double amount = rs.getDouble("amount");
-                return new LeaderboardEntry(rs.getString("donor_name"), amount, MessageUtils.formatIndonesianNumber(amount));
+                return new LeaderboardEntry(rs.getString("donor_name"), amount, MessageUtils.formatAmount(plugin, amount));
             }
         } catch (SQLException e) {
             plugin.getLogger().severe("Failed to get recent donation: " + e.getMessage());

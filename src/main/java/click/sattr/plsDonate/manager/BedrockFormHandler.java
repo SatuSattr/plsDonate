@@ -37,14 +37,14 @@ public class BedrockFormHandler {
         if (rawContent.isEmpty()) {
              rawContent = List.of(
                  "<gray>Are you sure you want to donate?", "",
-                 "<gray>Amount: <green>Rp{AMOUNT_FORMATTED}",
+                 "<gray>Amount: <green>{AMOUNT_FORMATTED}",
                  "<gray>Email: <white>{EMAIL}",
                  "<gray>Method: <yellow>{METHOD}",
                  "<gray>Message: <yellow>{MESSAGE}"
              );
         }
 
-        Map<String, String> p = MessageUtils.getDonationPlaceholders(amount, player.getName(), email, method, message);
+        Map<String, String> p = MessageUtils.getDonationPlaceholders(plugin, amount, player.getName(), email, method, message);
 
         for (String line : rawContent) {
              String processedLine = line;
@@ -109,7 +109,7 @@ public class BedrockFormHandler {
                         player.getName(), 
                         email, 
                         amount, 
-                        MessageUtils.formatIndonesianNumber(amount), 
+                        MessageUtils.formatAmount(plugin, amount), 
                         method,
                         response.paymentUrl(),
                         message

@@ -169,7 +169,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                 pendingRequests.entrySet().removeIf(entry -> entry.getValue().playerUuid().equals(player.getUniqueId()));
                 pendingRequests.put(hash, new DonationSimulationRequest(player.getUniqueId(), amount, email, method, message, isSandbox));
 
-                Map<String, String> p = MessageUtils.getDonationPlaceholders(amount, player.getName(), email, method, message);
+                Map<String, String> p = MessageUtils.getDonationPlaceholders(plugin, amount, player.getName(), email, method, message);
                 p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
                 p.put(Constants.COMMAND, "/pdn " + sub + " " + hash);
 
@@ -213,7 +213,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                 entryP.put(Constants.RANK, String.valueOf(i + 1));
                 entryP.put("{NAME}", entry.name());
                 entryP.put(Constants.AMOUNT_FORMATTED, entry.amountFormatted());
-                sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("leaderboard-format", "<yellow>{RANK}. <white>{NAME} <gray>- <green>Rp{AMOUNT_FORMATTED}"), entryP));
+                sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("leaderboard-format", "<yellow>{RANK}. <white>{NAME} <gray>- <green>{AMOUNT_FORMATTED}"), entryP));
             }
         }
         sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("leaderboard-footer", "<gray>----------------------------"), p));
@@ -235,14 +235,14 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
         Map<String, String> p = new HashMap<>();
         p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
         p.put(Constants.TITLE, title);
-        p.put("{CURRENT_FORMATTED}", MessageUtils.formatIndonesianNumber(current));
-        p.put("{TARGET_FORMATTED}", MessageUtils.formatIndonesianNumber(target));
+        p.put("{CURRENT_FORMATTED}", MessageUtils.formatAmount(plugin, current));
+        p.put("{TARGET_FORMATTED}", MessageUtils.formatAmount(plugin, target));
         p.put(Constants.PERCENTAGE, String.format("%.1f", percentage));
         p.put(Constants.BAR, createProgressBar(percentage));
         
         sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("milestone-header", "<gray>------ <gold>Donation Milestone <gray>------"), p));
         sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("milestone-title", "  <white>Target: <yellow>{TITLE}"), p));
-        sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("milestone-progress", "  <white>Progress: <green>Rp{CURRENT_FORMATTED} <gray>/ <red>Rp{TARGET_FORMATTED}"), p));
+        sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("milestone-progress", "  <white>Progress: <green>{CURRENT_FORMATTED} <gray>/ <red>{TARGET_FORMATTED}"), p));
         sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("milestone-percentage", "  <white>Percentage: <aqua>{PERCENT}% {BAR}"), p));
         sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("milestone-footer", "<gray>----------------------------"), p));
     }
