@@ -132,4 +132,97 @@ public class BedrockFormHandler {
             }
         });
     }
+
+    public void sendClearConfirmationForm(Player player, String target) {
+        String title = plugin.getLangConfig().getString("transaction-clear-confirmation-bedrock.title", "Confirm Clear Transactions");
+        String btnYes = plugin.getLangConfig().getString("transaction-clear-confirmation-bedrock.btn-yes", "Yes, Clear");
+        String btnNo = plugin.getLangConfig().getString("transaction-clear-confirmation-bedrock.btn-no", "Cancel");
+
+        StringBuilder contentInfo = new StringBuilder();
+        net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacySection = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection();
+
+        List<String> rawContent = plugin.getLangConfig().getStringList("transaction-clear-confirmation-bedrock.content");
+        if (rawContent.isEmpty()) {
+             rawContent = List.of(
+                 "§cAre you sure you want to clear transactions for: §f" + target + "?",
+                 "",
+                 "§7This action cannot be undone."
+             );
+        }
+
+        for (String line : rawContent) {
+             String processedLine = line.replace("{TARGET}", target);
+             net.kyori.adventure.text.Component component = MessageUtils.parseMessage(processedLine);
+             String legacyText = legacySection.serialize(component);
+             contentInfo.append(legacyText).append("\n");
+        }
+
+        SimpleForm form = SimpleForm.builder()
+            .title(title)
+            .content(contentInfo.toString())
+            .button(btnYes)
+            .button(btnNo)
+            .validResultHandler(response -> {
+                if (response.clickedButtonId() == 0) {
+                    plugin.getTransactionRepository().clearTransactions(target);
+                    Map<String, String> p = new HashMap<>();
+                    p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    p.put("{TARGET}", target);
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-cleared", "{PREFIX} <green>Cleared transactions for: {TARGET}"), p));
+                }
+            })
+            .build();
+        
+        FloodgateApi.getInstance().sendForm(player.getUniqueId(), form);
+        MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-confirmation");
+    }
+
+    public void sendDeleteConfirmationForm(Player player, int id) {
+        String title = plugin.getLangConfig().getString("transaction-delete-confirmation-bedrock.title", "Confirm Delete Transaction");
+        String btnYes = plugin.getLangConfig().getString("transaction-delete-confirmation-bedrock.btn-yes", "Yes, Delete");
+        String btnNo = plugin.getLangConfig().getString("transaction-delete-confirmation-bedrock.btn-no", "Cancel");
+
+        StringBuilder contentInfo = new StringBuilder();
+        net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacySection = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection();
+
+        List<String> rawContent = plugin.getLangConfig().getStringList("transaction-delete-confirmation-bedrock.content");
+        if (rawContent.isEmpty()) {
+             rawContent = List.of(
+                 "§cAre you sure you want to delete transaction §f#" + id + "?",
+                 "",
+                 "§7This action cannot be undone."
+             );
+        }
+
+        for (String line : rawContent) {
+             String processedLine = line.replace("{ID}", String.valueOf(id));
+             net.kyori.adventure.text.Component component = MessageUtils.parseMessage(processedLine);
+             String legacyText = legacySection.serialize(component);
+             contentInfo.append(legacyText).append("\n");
+        }
+
+        SimpleForm form = SimpleForm.builder()
+            .title(title)
+            .content(contentInfo.toString())
+            .button(btnYes)
+            .button(btnNo)
+            .validResultHandler(response -> {
+                if (response.clickedButtonId() == 0) {
+                    if (plugin.getTransactionRepository().deleteTransaction(id)) {
+                        Map<String, String> p = new HashMap<>();
+                        p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                        p.put(Constants.ID, String.valueOf(id));
+                        player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-deleted", "{PREFIX} <green>Transaction #{ID} deleted."), p));
+                    } else {
+                        Map<String, String> p = new HashMap<>();
+                        p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                        player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-not-found", "{PREFIX} <red>Transaction not found."), p));
+                    }
+                }
+            })
+            .build();
+        
+        FloodgateApi.getInstance().sendForm(player.getUniqueId(), form);
+        MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-confirmation");
+    }
 }

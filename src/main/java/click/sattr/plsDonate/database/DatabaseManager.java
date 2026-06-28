@@ -24,7 +24,7 @@ public class DatabaseManager {
 
     private void setupPool() {
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:sqlite:" + databaseFile.getAbsolutePath());
+        config.setJdbcUrl("jdbc:sqlite:" + databaseFile.getAbsolutePath() + "?busy_timeout=5000");
         config.setDriverClassName("org.sqlite.JDBC");
         config.setPoolName("plsDonate-Pool");
         

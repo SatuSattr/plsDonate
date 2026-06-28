@@ -11,7 +11,7 @@ min-donation-error: "{PREFIX} <white>Sorry, <red>minimum <white>amount of donati
 max-donation-error: "{PREFIX} <white>Sorry, <red>maximum <white>amount of donation is <yellow>Rp{AMOUNT_FORMATTED}"
 invalid-email: "{PREFIX} <white>Please <red>provide <white>a valid email <gray>example: (your@gmail.com)"
 message-length-error: "{PREFIX} <white>Sorry, <red>maximal length <white>of the message is <yellow>{LIMIT} Character. <white>Please shorten your message."
-startup-success: "{PREFIX} plsDonate-Express has been <green>loaded successfully! <reset>Webhook is listening on port <yellow>{PORT}"
+startup-success: "{PREFIX} plsDonate has been <green>loaded successfully! <reset>Webhook is listening on port <yellow>{PORT}"
 local-env-warning:
   - "{PREFIX} <red>[!] LOCAL ENVIRONMENT DETECTED [!]"
   - "{PREFIX} <yellow>It seems you are running this server in a local environment."
@@ -145,5 +145,37 @@ transaction-cleared: "{PREFIX} <green>Successfully cleared transactions for: <ye
 transaction-not-found: "{PREFIX} <red>Transaction not found."
 transaction-invalid-id: "{PREFIX} <red>Invalid transaction ID."
 transaction-invalid-amount: "{PREFIX} <red>Invalid amount format."
+
+transaction-delete-confirmation-java:
+  - ""
+  - "{PREFIX} Are you sure you want to <red>delete</red> transaction <yellow>#{ID}</yellow>?"
+  - ""
+  - '     <hover:show_text:"<gray>Click here to delete<newline>this transaction permanently."><click:run_command:"{COMMAND}"><green><underlined>[Yes]</underlined></green></click>    <hover:show_text:"<gray>Just ignore this prompt if<newline>you don’t want to continue."><gray>[No]'
+  - ""
+
+transaction-clear-confirmation-java:
+  - ""
+  - "{PREFIX} Are you sure you want to <red>clear</red> transactions for <yellow>{TARGET}</yellow>?"
+  - ""
+  - '     <hover:show_text:"<gray>Click here to clear all<newline>transactions permanently."><click:run_command:"{COMMAND}"><green><underlined>[Yes]</underlined></green></click>    <hover:show_text:"<gray>Just ignore this prompt if<newline>you don’t want to continue."><gray>[No]'
+  - ""
+
+transaction-clear-confirmation-bedrock:
+  title: "Confirm Clear Transactions"
+  content:
+    - "<red>Are you sure you want to clear transactions for: <white>{TARGET}</white>?</red>"
+    - ""
+    - "<gray>This action cannot be undone."
+  btn-yes: "Yes, Clear"
+  btn-no: "Cancel"
+
+transaction-delete-confirmation-bedrock:
+  title: "Confirm Delete Transaction"
+  content:
+    - "<red>Are you sure you want to delete transaction <white>#{ID}</white>?</red>"
+    - ""
+    - "<gray>This action cannot be undone."
+  btn-yes: "Yes, Delete"
+  btn-no: "Cancel"
 
 loading-overlay: "{PREFIX} <gray>Fetching data from API... Please wait."

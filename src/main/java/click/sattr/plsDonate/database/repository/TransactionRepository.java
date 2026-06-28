@@ -22,8 +22,8 @@ public class TransactionRepository {
         this.databaseManager = databaseManager;
     }
 
-    public void createDonationRequest(String txId, double amount, String name, boolean isSandbox) {
-        CompletableFuture.runAsync(() -> {
+    public java.util.concurrent.CompletableFuture<Void> createDonationRequest(String txId, double amount, String name, boolean isSandbox) {
+        return java.util.concurrent.CompletableFuture.runAsync(() -> {
             String sql = "INSERT OR IGNORE INTO transactions (tx_id, amount, donor_name, checksum, status, timestamp, is_sandbox) VALUES (?, ?, ?, ?, ?, ?, ?)";
             try (Connection conn = databaseManager.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, txId);
@@ -60,8 +60,8 @@ public class TransactionRepository {
         return false;
     }
 
-    public void markTransactionUsed(String txId) {
-        CompletableFuture.runAsync(() -> {
+    public java.util.concurrent.CompletableFuture<Void> markTransactionUsed(String txId) {
+        return java.util.concurrent.CompletableFuture.runAsync(() -> {
             String sql = "UPDATE transactions SET status = 'COMPLETED', completed_at = ? WHERE tx_id = ?";
             try (Connection conn = databaseManager.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setLong(1, System.currentTimeMillis() / 1000L);

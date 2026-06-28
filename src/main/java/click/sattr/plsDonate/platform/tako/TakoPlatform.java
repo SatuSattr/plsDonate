@@ -135,8 +135,21 @@ public class TakoPlatform implements DonationPlatform {
             }
 
             String transactionId = payload.get("id").getAsString();
-            String donorName = payload.has("name") ? payload.get("name").getAsString() : "Anonymous";
-            String donorEmail = payload.has("email") ? payload.get("email").getAsString() : "N/A";
+            
+            String donorName = "Anonymous";
+            if (payload.has("gifterName") && !payload.get("gifterName").isJsonNull()) {
+                donorName = payload.get("gifterName").getAsString();
+            } else if (payload.has("name") && !payload.get("name").isJsonNull()) {
+                donorName = payload.get("name").getAsString();
+            }
+
+            String donorEmail = "N/A";
+            if (payload.has("gifterEmail") && !payload.get("gifterEmail").isJsonNull()) {
+                donorEmail = payload.get("gifterEmail").getAsString();
+            } else if (payload.has("email") && !payload.get("email").isJsonNull()) {
+                donorEmail = payload.get("email").getAsString();
+            }
+
             double amount = payload.has("amount") ? payload.get("amount").getAsDouble() : 0.0;
             String message = payload.has("message") ? payload.get("message").getAsString() : "";
             String paymentMethod = payload.has("paymentMethod") ? payload.get("paymentMethod").getAsString() : "unknown";

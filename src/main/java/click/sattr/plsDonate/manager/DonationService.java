@@ -30,9 +30,9 @@ public class DonationService {
     public void fulfillDonation(String playerName, double amount, String email, String method, String message, String transactionId, boolean isSandbox) {
         String formattedAmount = MessageUtils.formatAmount(plugin, amount);
 
-        // 1. Save to Database
-        plugin.getTransactionRepository().createDonationRequest(transactionId, amount, playerName, isSandbox);
-        plugin.getTransactionRepository().markTransactionUsed(transactionId);
+        // 1. Save to Database sequentially to prevent asynchronous race conditions
+        plugin.getTransactionRepository().createDonationRequest(transactionId, amount, playerName, isSandbox)
+                .thenRun(() -> plugin.getTransactionRepository().markTransactionUsed(transactionId));
 
         // 2. Broadcast Notifications
         if (plugin.getConfig().getBoolean(Constants.CONF_DONATE_NOTIFICATION, true)) {

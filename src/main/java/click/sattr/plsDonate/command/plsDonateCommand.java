@@ -28,6 +28,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
 
     private final PlsDonate plugin;
     private final Map<String, DonationSimulationRequest> pendingRequests = new ConcurrentHashMap<>();
+    private final Map<String, Long> pendingOperations = new ConcurrentHashMap<>();
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$");
     private static final Pattern MD5_PATTERN = Pattern.compile("^[a-fA-F0-9]{32}$");
 
@@ -126,11 +127,59 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                     if (args.length < 3) { sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-usage", "{PREFIX} <red>Invalid usage."), p)); return true; }
                     try {
                         int id = Integer.parseInt(args[2]);
-                        if (plugin.getTransactionRepository().deleteTransaction(id)) {
-                            p.put(Constants.ID, String.valueOf(id));
-                            sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-deleted", "{PREFIX} <green>Transaction #{ID} deleted."), p));
-                        } else sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-not-found", "{PREFIX} <red>Transaction not found."), p));
-                    } catch (NumberFormatException e) { sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-invalid-id", "{PREFIX} <red>Invalid ID."), p)); }
+                        if (sender instanceof Player player) {
+                            if (plugin.getBedrockFormHandler() != null && plugin.getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false) && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
+                                plugin.getBedrockFormHandler().sendDeleteConfirmationForm(player, id);
+                                return true;
+                            }
+
+                            if (isOperationConfirmed(player, "delete", String.valueOf(id))) {
+                                if (plugin.getTransactionRepository().deleteTransaction(id)) {
+                                    p.put(Constants.ID, String.valueOf(id));
+                                    sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-deleted", "{PREFIX} <green>Transaction #{ID} deleted."), p));
+                                } else {
+                                    sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-not-found", "{PREFIX} <red>Transaction not found."), p));
+                                }
+                            } else {
+                                requestOperationConfirmation(player, "delete", String.valueOf(id));
+                                String cmd = "/" + label + " transaction delete " + id;
+
+                                List<String> lines = plugin.getLangConfig().getStringList("transaction-delete-confirmation-java");
+                                if (lines.isEmpty()) {
+                                    lines = List.of(
+                                        "",
+                                        "{PREFIX} <yellow>Are you sure you want to delete transaction <red>#{ID}</red>?</yellow>",
+                                        "",
+                                        "     <click:run_command:\"{COMMAND}\"><green><underlined>[Yes]</underlined></green></click>    <gray>[No]",
+                                        ""
+                                    );
+                                }
+
+                                Map<String, String> confirmationPlaceholders = new HashMap<>(p);
+                                confirmationPlaceholders.put(Constants.ID, String.valueOf(id));
+                                confirmationPlaceholders.put(Constants.COMMAND, cmd);
+
+                                for (String line : lines) {
+                                    String processedLine = line;
+                                    for (Map.Entry<String, String> entry : confirmationPlaceholders.entrySet()) {
+                                        processedLine = processedLine.replace(entry.getKey(), entry.getValue());
+                                    }
+                                    sender.sendMessage(MessageUtils.parseMessage(processedLine));
+                                }
+
+                                MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-confirmation");
+                            }
+                        } else {
+                            if (plugin.getTransactionRepository().deleteTransaction(id)) {
+                                p.put(Constants.ID, String.valueOf(id));
+                                sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-deleted", "{PREFIX} <green>Transaction #{ID} deleted."), p));
+                            } else {
+                                sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-not-found", "{PREFIX} <red>Transaction not found."), p));
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-invalid-id", "{PREFIX} <red>Invalid ID."), p));
+                    }
                     break;
                 case "setstatus":
                     if (args.length < 4) { sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-usage", "{PREFIX} <red>Invalid usage."), p)); return true; }
@@ -147,9 +196,50 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                 case "clear":
                     if (args.length < 3) { sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-usage", "{PREFIX} <red>Invalid usage."), p)); return true; }
                     String target = args[2];
-                    plugin.getTransactionRepository().clearTransactions(target);
-                    p.put("{TARGET}", target);
-                    sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-cleared", "{PREFIX} <green>Cleared transactions for: {TARGET}"), p));
+                    if (sender instanceof Player player) {
+                        if (plugin.getBedrockFormHandler() != null && plugin.getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false) && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
+                            plugin.getBedrockFormHandler().sendClearConfirmationForm(player, target);
+                            return true;
+                        }
+
+                        if (isOperationConfirmed(player, "clear", target)) {
+                            plugin.getTransactionRepository().clearTransactions(target);
+                            p.put("{TARGET}", target);
+                            sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-cleared", "{PREFIX} <green>Cleared transactions for: {TARGET}"), p));
+                        } else {
+                            requestOperationConfirmation(player, "clear", target);
+                            String cmd = "/" + label + " transaction clear " + target;
+
+                            List<String> lines = plugin.getLangConfig().getStringList("transaction-clear-confirmation-java");
+                            if (lines.isEmpty()) {
+                                lines = List.of(
+                                    "",
+                                    "{PREFIX} <yellow>Are you sure you want to clear transactions for: <red>{TARGET}</red>?</yellow>",
+                                    "",
+                                    "     <click:run_command:\"{COMMAND}\"><green><underlined>[Yes]</underlined></green></click>    <gray>[No]",
+                                    ""
+                                );
+                            }
+
+                            Map<String, String> confirmationPlaceholders = new HashMap<>(p);
+                            confirmationPlaceholders.put("{TARGET}", target);
+                            confirmationPlaceholders.put(Constants.COMMAND, cmd);
+
+                            for (String line : lines) {
+                                String processedLine = line;
+                                for (Map.Entry<String, String> entry : confirmationPlaceholders.entrySet()) {
+                                    processedLine = processedLine.replace(entry.getKey(), entry.getValue());
+                                }
+                                sender.sendMessage(MessageUtils.parseMessage(processedLine));
+                            }
+
+                            MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-confirmation");
+                        }
+                    } else {
+                        plugin.getTransactionRepository().clearTransactions(target);
+                        p.put("{TARGET}", target);
+                        sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-cleared", "{PREFIX} <green>Cleared transactions for: {TARGET}"), p));
+                    }
                     break;
                 default:
                     sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-usage", "{PREFIX} <red>Invalid usage."), p));
@@ -265,6 +355,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             }
             return true;
         }
+
 
         if (args[0].equalsIgnoreCase("reload")) {
             if (!sender.hasPermission(Constants.PERM_ADMIN)) {
@@ -463,6 +554,22 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
     public void clearPendingRequests(UUID uuid) {
         pendingRequests.entrySet().removeIf(entry -> entry.getValue().playerUuid().equals(uuid));
     }
+
+    private boolean isOperationConfirmed(Player player, String actionType, String target) {
+        String key = player.getUniqueId().toString() + ":" + actionType + ":" + target;
+        Long expiry = pendingOperations.get(key);
+        if (expiry != null) {
+            pendingOperations.remove(key); // Remove immediately to prevent replay
+            return System.currentTimeMillis() <= expiry;
+        }
+        return false;
+    }
+
+    private void requestOperationConfirmation(Player player, String actionType, String target) {
+        String key = player.getUniqueId().toString() + ":" + actionType + ":" + target;
+        pendingOperations.put(key, System.currentTimeMillis() + 30000L); // 30 seconds expiry
+    }
+
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {

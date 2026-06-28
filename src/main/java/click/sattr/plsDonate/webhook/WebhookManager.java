@@ -94,8 +94,8 @@ public class WebhookManager {
                 // Determine if it's sandbox (usually false for webhooks, but safety first)
                 boolean isSandbox = plugin.getTransactionRepository().isSandboxTransaction(transactionId);
 
-                // Mark as completed in Ledger
-                plugin.getTransactionRepository().markTransactionUsed(transactionId);
+                // Mark as completed in Ledger synchronously to prevent concurrent double-fulfillment race conditions
+                plugin.getTransactionRepository().markTransactionUsed(transactionId).join();
 
                 // Process Rewards and Notifications
                 Bukkit.getScheduler().runTask(plugin, () -> {
