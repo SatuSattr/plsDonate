@@ -9,7 +9,19 @@ mvn clean package   # builds shaded JAR to target/
 mvn compile         # compile only
 ```
 
-No test suite exists. Output JAR includes all shaded dependencies (HikariCP, javax.mail, ConfigUpdater).
+The shaded JAR bundles HikariCP, javax.mail, and ConfigUpdater. The SQLite JDBC driver is **not** bundled — it is provided by the server at runtime (`org.sqlite.JDBC`), which is why `sqlite-jdbc` appears only as a test-scoped dependency.
+
+**Dependency versioning:** `paper-api` and `floodgate` exist upstream only as SNAPSHOTs (no stable releases). The plugin compiles against the *oldest* supported Paper API (`1.21-R0.1-SNAPSHOT`, matching `api-version` in `plugin.yml`) on purpose, so one JAR runs across 1.21 through current 26.x servers — raising the compile API or `api-version` would shrink that range and break older servers. CI (`.github/workflows/ci.yml`) uses `.m2` caching plus `-nsu` to keep SNAPSHOT fetches stable.
+
+## Test
+
+```bash
+mvn test                                                          # all tests (JUnit 5)
+mvn test -Dtest=ExpressionEvaluatorTest                           # one class
+mvn test -Dtest=ExpressionEvaluatorTest#divisionByZeroIsRejected  # one method
+```
+
+Tests live in `src/test/java`. `TransactionRepositoryClaimTest` runs the real ledger queries against a temporary on-disk SQLite database instead of mocking, so it exercises the actual atomic-claim SQL.
 
 ## What This Is
 
@@ -55,7 +67,8 @@ Three user-facing config files, auto-created from `src/main/resources/` defaults
 
 ## Important Patterns
 
-- **Replay attack prevention:** `TransactionRepository` marks each transaction as used atomically; `WebhookManager` rejects already-processed IDs.
+- **Ledger gating is intentional:** only donations initiated in-game via `/donate` are recorded in the ledger and thus fulfilled. A webhook whose transaction isn't in the ledger is rejected as "unrecorded" — this is a feature (it prevents misrouted rewards from external donation pages), not a bug to fix. `/donate` sends the Minecraft name to Tako.id as the `name` field; Tako.id returns it in the webhook as `gifterName` and locks the amount, so the stored `MD5(txId + amount + name)` checksum round-trips correctly.
+- **Replay attack prevention:** fulfillment is gated on an atomic compare-and-set — `TransactionRepository.claimTransaction()` runs `UPDATE ... SET status='COMPLETED' WHERE tx_id=? AND status='PENDING'` and only the caller that transitions the row (rows-affected == 1) proceeds. Do not revert this to a separate check-then-mark; that reintroduces a double-fulfillment race under concurrent webhooks.
 - **Offline triggers:** Commands for offline players are stored in the `offline_triggers` SQLite table and executed on `PlayerJoinEvent` via `OfflineTriggerRepository`.
 - **Sanitization:** Player names and donation messages are run through `sanitize()` before being substituted into commands — don't bypass this.
 - **Async database calls:** All DB operations run off the main thread; results that touch Bukkit API are dispatched back via `Bukkit.getScheduler().runTask()`.

@@ -15,6 +15,7 @@ import click.sattr.plsDonate.util.Constants;
 import click.sattr.plsDonate.util.MessageUtils;
 import click.sattr.plsDonate.webhook.WebhookManager;
 import com.tchristofferson.configupdater.ConfigUpdater;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -32,8 +33,11 @@ import java.util.Map;
 
 public final class PlsDonate extends JavaPlugin implements Listener {
 
+    private static final int BSTATS_PLUGIN_ID = 32260;
+
     private FileConfiguration langConfig;
     private WebhookManager webhookManager;
+    private Metrics metrics;
     
     private DatabaseManager databaseManager;
     private TransactionRepository transactionRepository;
@@ -143,6 +147,9 @@ public final class PlsDonate extends JavaPlugin implements Listener {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+
+        // Initialize bStats metrics
+        metrics = new Metrics(this, BSTATS_PLUGIN_ID);
 
         // Delayed startup message to appear after "Done!"
         Bukkit.getScheduler().runTask(this, () -> {
