@@ -8,6 +8,7 @@ import click.sattr.plsDonate.database.repository.TransactionRepository;
 import click.sattr.plsDonate.manager.BedrockFormHandler;
 import click.sattr.plsDonate.manager.DonationService;
 import click.sattr.plsDonate.manager.EmailManager;
+import click.sattr.plsDonate.manager.StatsManager;
 import click.sattr.plsDonate.manager.TriggersManager;
 import click.sattr.plsDonate.platform.DonationPlatform;
 import click.sattr.plsDonate.platform.tako.TakoPlatform;
@@ -47,6 +48,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
     private TriggersManager triggersManager;
     private EmailManager emailManager;
     private DonationService donationService;
+    private StatsManager statsManager;
     private BedrockFormHandler bedrockFormHandler;
     private DonateCommand donateCommand;
     private plsDonateCommand pdnCommand;
@@ -61,6 +63,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
     public TriggersManager getTriggersManager() { return triggersManager; }
     public EmailManager getEmailManager() { return emailManager; }
     public DonationService getDonationService() { return donationService; }
+    public StatsManager getStatsManager() { return statsManager; }
     public BedrockFormHandler getBedrockFormHandler() { return bedrockFormHandler; }
     
     @Override
@@ -106,6 +109,10 @@ public final class PlsDonate extends JavaPlugin implements Listener {
 
         // Initialize Donation Service
         donationService = new DonationService(this);
+
+        // Initialize stats cache (leaderboard + milestone) and warm it from the DB
+        statsManager = new StatsManager(this);
+        statsManager.refresh();
 
         // Register Donate Command
         donateCommand = new DonateCommand(this);
@@ -316,6 +323,10 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         
         if (emailManager != null) {
             emailManager.reload();
+        }
+
+        if (statsManager != null) {
+            statsManager.refresh();
         }
 
         if (bedrockFormHandler == null && getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false) && getServer().getPluginManager().getPlugin("floodgate") != null) {

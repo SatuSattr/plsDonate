@@ -30,9 +30,13 @@ public class DonationService {
     public void fulfillDonation(String playerName, double amount, String email, String method, String message, String transactionId, boolean isSandbox) {
         String formattedAmount = MessageUtils.formatAmount(plugin, amount);
 
-        // 1. Save to Database sequentially to prevent asynchronous race conditions
+        // 1. Save to Database sequentially to prevent asynchronous race conditions,
+        //    then refresh the in-memory stats cache once the row is COMPLETED.
         plugin.getTransactionRepository().createDonationRequest(transactionId, amount, playerName, isSandbox)
-                .thenRun(() -> plugin.getTransactionRepository().markTransactionUsed(transactionId));
+                .thenCompose(v -> plugin.getTransactionRepository().markTransactionUsed(transactionId))
+                .thenRun(() -> {
+                    if (plugin.getStatsManager() != null) plugin.getStatsManager().refreshSync();
+                });
 
         // 2. Broadcast Notifications
         if (plugin.getConfig().getBoolean(Constants.CONF_DONATE_NOTIFICATION, true)) {

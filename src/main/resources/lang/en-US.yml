@@ -2,13 +2,20 @@
 
 prefix: "<gray>[<green>plsDonate<gray>]<reset>"
 no-permission: "<red>You don't have permission to do this!"
-invalid-usage: "{PREFIX} <red>Invalid usage. <reset>try to run <yellow>/donate help<reset> for help"
+# {COMMAND} resolves to the command label used (donate, plsdonate, or pdn)
+invalid-usage: "{PREFIX} <red>Invalid usage. <reset>try to run <yellow>/{COMMAND} help<reset> for help"
 
 reload-success: "{PREFIX} <white>Configuration reloaded <green>successfully!"
 cooldown-error: "{PREFIX} <white>Sorry, you're still in <yellow>{TIME}s <white>cooldown"
 general-error: "{PREFIX} <red>Something wrong with the donation system! please contact admin"
 min-donation-error: "{PREFIX} <white>Sorry, <red>minimum <white>amount of donation is <yellow>Rp{AMOUNT_FORMATTED}"
 max-donation-error: "{PREFIX} <white>Sorry, <red>maximum <white>amount of donation is <yellow>Rp{AMOUNT_FORMATTED}"
+# Shown when the amount isn't a plain number (e.g. "11000k", "abc")
+invalid-amount: "{PREFIX} <white>Please <red>enter a valid amount <white>using numbers only <gray>(example: 50000)"
+# Shown when the payment method isn't one of the supported options
+invalid-payment-method: "{PREFIX} <red>Invalid payment method! <yellow>Options: qris, gopay, paypal"
+# Available Placeholders: {METHOD}, {METHOD_UPPERCASED}, {AMOUNT_FORMATTED}
+payment-method-min-error: "{PREFIX} <red>Minimum donation for {METHOD_UPPERCASED} is <yellow>Rp{AMOUNT_FORMATTED}"
 invalid-email: "{PREFIX} <white>Please <red>provide <white>a valid email <gray>example: (your@gmail.com)"
 message-length-error: "{PREFIX} <white>Sorry, <red>maximal length <white>of the message is <yellow>{LIMIT} Character. <white>Please shorten your message."
 startup-success: "{PREFIX} plsDonate has been <green>loaded successfully! <reset>Webhook is listening on port <yellow>{PORT}"
@@ -106,13 +113,13 @@ milestone-title: "  <white>Title: <yellow>{TITLE}"
 milestone-progress: "  <white>Progress: <green>Rp{CURRENT_FORMATTED} <gray>/ <red>Rp{TARGET_FORMATTED}"
 milestone-percentage: "  <white>Percentage: <aqua>{PERCENT}%"
 milestone-footer: "<br><gray><st>                                              "
+milestone-disabled: "{PREFIX} <red>Milestone feature is currently disabled in config.yml."
 
 # Transaction Management Messages
 # Available Placeholders (General): {PREFIX}
 transaction-help-header: "<gray><st>          <reset> <green>plsDonate <gold><u>Transaction Help</u> <gray><st>          "
 transaction-help-list: "  <yellow>/pdn transaction list [page] <gray>- List transactions"
 transaction-help-info: "  <yellow>/pdn transaction info <id> <gray>- Detailed info"
-transaction-help-add: "  <yellow>/pdn transaction add <player> <amount> [method] <gray>- Manual add"
 transaction-help-delete: "  <yellow>/pdn transaction delete <id> <gray>- Delete record"
 transaction-help-setstatus: "  <yellow>/pdn transaction setstatus <id> <status> <gray>- Force status"
 transaction-help-clear: "  <yellow>/pdn transaction clear <player|all> <gray>- Mass delete"

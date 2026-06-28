@@ -50,11 +50,31 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (args.length == 0 || (args.length == 1 && args[0].equalsIgnoreCase("help"))) {
+        // Help: accept any trailing args so "/donate help foo bar" still shows help
+        if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
             Map<String, String> p = new HashMap<>();
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
             p.put(Constants.COMMAND, label);
             MessageUtils.sendLangMessageList(player, plugin, "donation-help", p);
+            return true;
+        }
+
+        // Leaderboard / top — viewable by regular players, served from the in-memory cache
+        if (args[0].equalsIgnoreCase("leaderboard") || args[0].equalsIgnoreCase("top")) {
+            int page = 1;
+            if (args.length >= 2) {
+                try {
+                    page = Integer.parseInt(args[1]);
+                    if (page < 1) page = 1;
+                } catch (NumberFormatException ignored) {}
+            }
+            plugin.getStatsManager().displayLeaderboard(player, page, "/" + label + " " + args[0].toLowerCase());
+            return true;
+        }
+
+        // Milestone — viewable by regular players, served from the in-memory cache
+        if (args[0].equalsIgnoreCase("milestone")) {
+            plugin.getStatsManager().displayMilestone(player);
             return true;
         }
 
@@ -109,7 +129,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         } catch (NumberFormatException e) {
             Map<String, String> p = new HashMap<>();
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
-            player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("general-error", "{PREFIX} <red>Something wrong with the donation system! please contact admin"), p));
+            player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-amount", "{PREFIX} <white>Please <red>enter a valid amount <white>using numbers only <gray>(example: 50000)"), p));
             return true;
         }
 
@@ -148,21 +168,27 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         if (!method.equals("qris") && !method.equals("gopay") && !method.equals("paypal")) {
             Map<String, String> p = new HashMap<>();
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
-            player.sendMessage(MessageUtils.parseMessage("{PREFIX} <red>Invalid payment method! <yellow>Options: qris, gopay, paypal", p));
+            player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-payment-method", "{PREFIX} <red>Invalid payment method! <yellow>Options: qris, gopay, paypal"), p));
             return true;
         }
 
         if (method.equals("gopay") && amount < 10000) {
             Map<String, String> p = new HashMap<>();
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
-            player.sendMessage(MessageUtils.parseMessage("{PREFIX} <red>Minimum donation for GoPay is " + MessageUtils.formatAmount(plugin, 10000), p));
+            p.put(Constants.METHOD, method);
+            p.put("{METHOD_UPPERCASED}", method.toUpperCase());
+            p.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatAmount(plugin, 10000));
+            player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("payment-method-min-error", "{PREFIX} <red>Minimum donation for {METHOD_UPPERCASED} is <yellow>Rp{AMOUNT_FORMATTED}"), p));
             return true;
         }
 
         if (method.equals("paypal") && amount < 50000) {
             Map<String, String> p = new HashMap<>();
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
-            player.sendMessage(MessageUtils.parseMessage("{PREFIX} <red>Minimum donation for PayPal is " + MessageUtils.formatAmount(plugin, 50000), p));
+            p.put(Constants.METHOD, method);
+            p.put("{METHOD_UPPERCASED}", method.toUpperCase());
+            p.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatAmount(plugin, 50000));
+            player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("payment-method-min-error", "{PREFIX} <red>Minimum donation for {METHOD_UPPERCASED} is <yellow>Rp{AMOUNT_FORMATTED}"), p));
             return true;
         }
 
@@ -292,38 +318,59 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         List<String> completions = new ArrayList<>();
-        
+
         if (args.length == 1) {
             String sub = args[0].toLowerCase();
             if ("help".startsWith(sub)) completions.add("help");
-            
+            if ("top".startsWith(sub)) completions.add("top");
+            if ("leaderboard".startsWith(sub)) completions.add("leaderboard");
+            if ("milestone".startsWith(sub)) completions.add("milestone");
+
             double min = plugin.getConfig().getDouble(Constants.CONF_DONATE_MIN_AMOUNT, 1000);
             long[] suggestions = { (long) min, (long) min + 5000, (long) min + 10000 };
             for (long s : suggestions) {
                 if (String.valueOf(s).startsWith(sub)) completions.add(String.valueOf(s));
             }
-        } else if (args.length == 2) {
+        } else if (args.length == 2 && (args[0].equalsIgnoreCase("leaderboard") || args[0].equalsIgnoreCase("top"))) {
             String sub = args[1].toLowerCase();
-            List<String> args2 = plugin.getLangConfig().getStringList("donation-tab-completions-args2");
-            if (args2.isEmpty()) args2 = List.of("your-valid@email.com");
-            for (String s : args2) {
-                if (s.toLowerCase().startsWith(sub)) completions.add(s);
+            for (String pg : List.of("1", "2", "3")) {
+                if (pg.startsWith(sub)) completions.add(pg);
             }
-        } else if (args.length == 3) {
-            String sub = args[2].toLowerCase();
-            List<String> methods = List.of("qris", "gopay", "paypal");
-            for (String m : methods) {
-                if (m.startsWith(sub)) completions.add(m);
-            }
-        } else if (args.length == 4) {
-            String sub = args[3].toLowerCase();
-            List<String> args4 = plugin.getLangConfig().getStringList("donation-tab-completions-args3");
-            if (args4.isEmpty()) args4 = List.of("[messages]");
-            for (String s : args4) {
-                if (s.toLowerCase().startsWith(sub)) completions.add(s);
+        } else if (isNumericAmount(args[0])) {
+            // Only suggest email/method/message once arg-1 is an actual amount, so subcommands
+            // like "help"/"top"/"milestone" don't spill into donation-argument completions.
+            if (args.length == 2) {
+                String sub = args[1].toLowerCase();
+                List<String> args2 = plugin.getLangConfig().getStringList("donation-tab-completions-args2");
+                if (args2.isEmpty()) args2 = List.of("your-valid@email.com");
+                for (String s : args2) {
+                    if (s.toLowerCase().startsWith(sub)) completions.add(s);
+                }
+            } else if (args.length == 3) {
+                String sub = args[2].toLowerCase();
+                List<String> methods = List.of("qris", "gopay", "paypal");
+                for (String m : methods) {
+                    if (m.startsWith(sub)) completions.add(m);
+                }
+            } else if (args.length == 4) {
+                String sub = args[3].toLowerCase();
+                List<String> args4 = plugin.getLangConfig().getStringList("donation-tab-completions-args3");
+                if (args4.isEmpty()) args4 = List.of("[messages]");
+                for (String s : args4) {
+                    if (s.toLowerCase().startsWith(sub)) completions.add(s);
+                }
             }
         }
 
         return completions;
+    }
+
+    private boolean isNumericAmount(String s) {
+        if (s == null || s.isEmpty()) return false;
+        try {
+            return Double.isFinite(Double.parseDouble(s));
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 }

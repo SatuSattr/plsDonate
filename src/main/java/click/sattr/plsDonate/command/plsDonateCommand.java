@@ -53,10 +53,10 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
             sender.sendMessage(MessageUtils.parseMessage("<gray>------ <green>plsDonate Help <gray>------<newline>", p));
             sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn help <gray>- Show this help message", p));
-            sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn leaderboard <gray>- Show top donators", p));
+            sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn leaderboard <gray>(or <yellow>top<gray>) - Show top donators", p));
             sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn milestone <gray>- Show donation goal", p));
             if (sender.hasPermission(Constants.PERM_ADMIN)) {
-                sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn transaction <gray>- Manage transactions (CRUD)", p));
+                sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn transaction <gray>- Manage transactions", p));
                 sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn fakedonate <amount> <email> <method> [msg] <gray>- Simulate a sandbox donation (Hidden from stats)", p));
                 sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn pushdonate <amount> <email> <method> [msg] <gray>- Simulate a real donation (Included in stats)", p));
                 sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn reload <gray>- Reload configuration", p));
@@ -65,7 +65,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("leaderboard")) {
+        if (args[0].equalsIgnoreCase("leaderboard") || args[0].equalsIgnoreCase("top")) {
             int page = 1;
             if (args.length >= 2) {
                 try {
@@ -73,12 +73,12 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                     if (page < 1) page = 1;
                 } catch (NumberFormatException ignored) {}
             }
-            displayLeaderboard(sender, page);
+            plugin.getStatsManager().displayLeaderboard(sender, page, "/" + label + " " + args[0].toLowerCase());
             return true;
         }
 
         if (args[0].equalsIgnoreCase("milestone")) {
-            displayMilestone(sender);
+            plugin.getStatsManager().displayMilestone(sender);
             return true;
         }
 
@@ -89,7 +89,6 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-help-header", "<gray>------ <gold>Transaction Management <gray>------"), p));
                 sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-help-list", "  <yellow>/pdn transaction list [page] <gray>- List transactions"), p));
                 sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-help-info", "  <yellow>/pdn transaction info <id> <gray>- Detailed info"), p));
-                sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-help-add", "  <yellow>/pdn transaction add <player> <amount> [method] <gray>- Manual add"), p));
                 sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-help-delete", "  <yellow>/pdn transaction delete <id> <gray>- Delete record"), p));
                 sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-help-setstatus", "  <yellow>/pdn transaction setstatus <id> <status> <gray>- Force status"), p));
                 sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-help-clear", "  <yellow>/pdn transaction clear <player|all> <gray>- Mass delete"), p));
@@ -100,6 +99,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             String sub = args[1].toLowerCase();
             Map<String, String> p = new HashMap<>();
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+            p.put(Constants.COMMAND, label);
 
             switch (sub) {
                 case "list":
@@ -113,16 +113,6 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                     if (args.length < 3) { sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-usage", "{PREFIX} <red>Invalid usage."), p)); return true; }
                     try { displayTransactionInfo(sender, Integer.parseInt(args[2])); } catch (NumberFormatException e) { sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-invalid-id", "{PREFIX} <red>Invalid ID."), p)); }
                     break;
-                case "add":
-                    if (args.length < 4) { sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-usage", "{PREFIX} <red>Invalid usage."), p)); return true; }
-                    String pName = args[2];
-                    double amt;
-                    try { amt = Double.parseDouble(args[3]); } catch (NumberFormatException e) { sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-invalid-amount", "{PREFIX} <red>Invalid amount."), p)); return true; }
-                    String mtd = args.length >= 5 ? args[4] : "MANUAL";
-                    String manualTxId = "MANUAL-" + System.currentTimeMillis();
-                    plugin.getDonationService().fulfillDonation(pName, amt, "manual@internal", mtd, "Manual entry by admin", manualTxId, false);
-                    sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-added", "{PREFIX} <green>Transaction added successfully!"), p));
-                    break;
                 case "delete":
                     if (args.length < 3) { sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-usage", "{PREFIX} <red>Invalid usage."), p)); return true; }
                     try {
@@ -135,6 +125,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
 
                             if (isOperationConfirmed(player, "delete", String.valueOf(id))) {
                                 if (plugin.getTransactionRepository().deleteTransaction(id)) {
+                                    plugin.getStatsManager().refresh();
                                     p.put(Constants.ID, String.valueOf(id));
                                     sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-deleted", "{PREFIX} <green>Transaction #{ID} deleted."), p));
                                 } else {
@@ -171,6 +162,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                             }
                         } else {
                             if (plugin.getTransactionRepository().deleteTransaction(id)) {
+                                plugin.getStatsManager().refresh();
                                 p.put(Constants.ID, String.valueOf(id));
                                 sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-deleted", "{PREFIX} <green>Transaction #{ID} deleted."), p));
                             } else {
@@ -187,6 +179,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                         int id = Integer.parseInt(args[2]);
                         String status = args[3].toUpperCase();
                         if (plugin.getTransactionRepository().updateTransactionStatus(id, status)) {
+                            plugin.getStatsManager().refresh();
                             p.put(Constants.ID, String.valueOf(id));
                             p.put("{STATUS}", status);
                             sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-status-updated", "{PREFIX} <green>Status of #{ID} updated to {STATUS}."), p));
@@ -204,6 +197,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
 
                         if (isOperationConfirmed(player, "clear", target)) {
                             plugin.getTransactionRepository().clearTransactions(target);
+                            plugin.getStatsManager().refresh();
                             p.put("{TARGET}", target);
                             sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-cleared", "{PREFIX} <green>Cleared transactions for: {TARGET}"), p));
                         } else {
@@ -237,6 +231,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                         }
                     } else {
                         plugin.getTransactionRepository().clearTransactions(target);
+                        plugin.getStatsManager().refresh();
                         p.put("{TARGET}", target);
                         sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-cleared", "{PREFIX} <green>Cleared transactions for: {TARGET}"), p));
                     }
@@ -284,7 +279,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             if (args.length < 4) {
                 Map<String, String> p = new HashMap<>();
                 p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
-                p.put(Constants.COMMAND, label + " " + sub + " <amount> <email> <method> [msg]");
+                p.put(Constants.COMMAND, label);
                 player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-usage", "{PREFIX} <red>Invalid usage. <reset>try to run <yellow>/donate help<reset> for help"), p));
                 return true;
             }
@@ -296,7 +291,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             } catch (NumberFormatException e) {
                 Map<String, String> p = new HashMap<>();
                 p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
-                player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("general-error", "{PREFIX} <red>Something wrong with the donation system! please contact admin"), p));
+                player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-amount", "{PREFIX} <white>Please <red>enter a valid amount <white>using numbers only <gray>(example: 50000)"), p));
                 return true;
             }
 
@@ -375,41 +370,6 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private void displayLeaderboard(CommandSender sender, int page) {
-        int limit = 11;
-        int offset = (page - 1) * limit;
-        List<TransactionRepository.LeaderboardEntry> entries = plugin.getTransactionRepository().getLeaderboard(limit, offset);
-        int totalCount = plugin.getTransactionRepository().getLeaderboardCount();
-        int totalPages = (int) Math.ceil((double) totalCount / limit);
-
-        Map<String, String> p = new HashMap<>();
-        p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
-        p.put("{PAGE}", String.valueOf(page));
-        p.put("{TOTAL_PAGES}", String.valueOf(totalPages));
-        
-        sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("leaderboard-header", "<gray>------ <gold>Donation Leaderboard (Page {PAGE}/{TOTAL_PAGES}) <gray>------"), p));
-        if (entries.isEmpty()) {
-            sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("leaderboard-empty", "<gray>No donation records found."), p));
-        } else {
-            for (int i = 0; i < entries.size(); i++) {
-                TransactionRepository.LeaderboardEntry entry = entries.get(i);
-                Map<String, String> entryP = new HashMap<>(p);
-                entryP.put(Constants.RANK, String.valueOf(offset + i + 1));
-                entryP.put("{NAME}", entry.name());
-                entryP.put(Constants.AMOUNT_FORMATTED, entry.amountFormatted());
-                sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("leaderboard-format", "<yellow>{RANK}. <white>{NAME} <gray>- <green>{AMOUNT_FORMATTED}"), entryP));
-            }
-        }
-
-        if (page < totalPages) {
-            String footer = plugin.getLangConfig().getString("leaderboard-footer", "<gray>----------------------------");
-            String nextBtn = " <yellow><click:run_command:\"/pdn leaderboard " + (page + 1) + "\"><hover:show_text:\"<gray>Click to view page " + (page + 1) + "\">[Next Page »]</hover></click>";
-            sender.sendMessage(MessageUtils.parseMessage(footer + nextBtn, p));
-        } else {
-            sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("leaderboard-footer", "<gray>----------------------------"), p));
-        }
-    }
-
     private void displayTransactionList(CommandSender sender, int page) {
         int limit = 10;
         int offset = (page - 1) * limit;
@@ -486,44 +446,6 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
         return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(timestamp * 1000L));
     }
 
-    private void displayMilestone(CommandSender sender) {
-        if (!plugin.getConfig().getBoolean(Constants.CONF_MILESTONE_ENABLED, true)) {
-            sender.sendMessage(MessageUtils.parseMessage("<red>Milestone feature is currently disabled in config.yml.", new HashMap<>()));
-            return;
-        }
-
-        double current = plugin.getTransactionRepository().getTotalDonations() + plugin.getConfig().getDouble(Constants.CONF_MILESTONE_OFFSET, 0);
-        double target = plugin.getConfig().getDouble(Constants.CONF_MILESTONE_TARGET, 1000000);
-        String title = plugin.getConfig().getString(Constants.CONF_MILESTONE_TITLE, "Goal");
-
-        double percentage = (current / target) * 100;
-        if (percentage > 100) percentage = 100;
-
-        Map<String, String> p = new HashMap<>();
-        p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
-        p.put(Constants.TITLE, title);
-        p.put("{CURRENT_FORMATTED}", MessageUtils.formatAmount(plugin, current));
-        p.put("{TARGET_FORMATTED}", MessageUtils.formatAmount(plugin, target));
-        p.put(Constants.PERCENTAGE, String.format("%.1f", percentage));
-        p.put(Constants.BAR, createProgressBar(percentage));
-        
-        sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("milestone-header", "<gray>------ <gold>Donation Milestone <gray>------"), p));
-        sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("milestone-title", "  <white>Target: <yellow>{TITLE}"), p));
-        sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("milestone-progress", "  <white>Progress: <green>{CURRENT_FORMATTED} <gray>/ <red>{TARGET_FORMATTED}"), p));
-        sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("milestone-percentage", "  <white>Percentage: <aqua>{PERCENT}% {BAR}"), p));
-        sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("milestone-footer", "<gray>----------------------------"), p));
-    }
-
-    private String createProgressBar(double percentage) {
-        int bars = 10;
-        int filled = (int) (percentage / 10);
-        StringBuilder sb = new StringBuilder("<green>");
-        for (int i = 0; i < filled; i++) sb.append("■");
-        sb.append("<gray>");
-        for (int i = filled; i < bars; i++) sb.append("■");
-        return sb.toString();
-    }
-
     private void executeSimulatedDonation(Player player, double amount, String email, String method, String message, boolean isSandbox) {
         String txId = (isSandbox ? "FAKETX-" : "PUSHTX-") + System.currentTimeMillis();
 
@@ -583,17 +505,18 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             if ("pushdonate".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN)) completions.add("pushdonate");
             if ("reload".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN)) completions.add("reload");
             if ("leaderboard".startsWith(sub)) completions.add("leaderboard");
+            if ("top".startsWith(sub)) completions.add("top");
             if ("milestone".startsWith(sub)) completions.add("milestone");
             if ("transaction".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN)) completions.add("transaction");
             if ("help".startsWith(sub)) completions.add("help");
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("leaderboard")) {
+        } else if (args.length == 2 && (args[0].equalsIgnoreCase("leaderboard") || args[0].equalsIgnoreCase("top"))) {
             completions.add("1");
             completions.add("2");
             completions.add("3");
         } else if (args.length >= 2 && args[0].equalsIgnoreCase("transaction") && sender.hasPermission(Constants.PERM_ADMIN)) {
             if (args.length == 2) {
                 String sub = args[1].toLowerCase();
-                List<String> subs = List.of("list", "info", "add", "delete", "setstatus", "clear");
+                List<String> subs = List.of("list", "info", "delete", "setstatus", "clear");
                 for (String s : subs) if (s.startsWith(sub)) completions.add(s);
             } else if (args.length == 3) {
                 String sub = args[2].toLowerCase();
@@ -601,8 +524,6 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                     completions.add("[id]");
                 } else if (args[1].equalsIgnoreCase("clear")) {
                     completions.add("all");
-                    for (Player p : Bukkit.getOnlinePlayers()) if (p.getName().toLowerCase().startsWith(sub)) completions.add(p.getName());
-                } else if (args[1].equalsIgnoreCase("add")) {
                     for (Player p : Bukkit.getOnlinePlayers()) if (p.getName().toLowerCase().startsWith(sub)) completions.add(p.getName());
                 }
             } else if (args.length == 4 && args[1].equalsIgnoreCase("setstatus")) {
