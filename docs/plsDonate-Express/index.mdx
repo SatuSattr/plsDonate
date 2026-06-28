@@ -1,0 +1,27 @@
+# Introduction to plsDonate-Express
+
+**plsDonate-Express** is a high-performance, professional-grade Minecraft plugin designed to bridge your in-game economy with real-world donations. It provides a seamless experience for both Java and Bedrock Edition players, ensuring that your server's growth is supported by a secure and automated donation workflow.
+
+[Screenshot: A beautiful in-game broadcast showing a player donation notification with vibrant colors]
+
+## Key Features
+
+- **Tako.id Integration:** Native support for the Tako.id payment gateway, allowing you to accept payments via QRIS, GoPay, and PayPal.
+- **Cross-Platform Support:** 
+    - **Java Edition:** Sleek chat-based confirmation links.
+    - **Bedrock Edition:** Native UI forms (Cumulus) for a console-like experience—no more struggling with chat links on mobile!
+- **Secure Webhook System:** Internal high-speed webhook listener that validates every payment with HMAC-SHA256 signatures and a unique "Transaction Ledger" to prevent replay attacks.
+- **Dynamic Reward Triggers:** Automate your server rewards! Give items, ranks, or currency based on donation amounts, even if the player is offline.
+- **Email Receipts:** Automatically sends a professional HTML email receipt containing the payment link to the donor's inbox.
+- **PlaceholderAPI Support:** Display your top donors and donation goals anywhere on your server.
+
+## Why "Express"?
+
+The **Express** version is optimized for speed and security. It utilizes an internal HTTP server to listen for webhooks directly, reducing dependency on heavy external web frameworks and ensuring your server thread remains lag-free.
+
+---
+
+### Next Steps
+- [Installation Guide](./installation)
+- [Set up Tako.id](./configuration/tako-setup)
+- [Configure Rewards](./features/reward-triggers)

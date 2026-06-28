@@ -1,0 +1,59 @@
+# Tako.id Integration
+
+Connecting your server to **Tako.id** allows you to accept real-world payments and automatically process them in Minecraft. This guide will walk you through obtaining your credentials and setting up the webhook listener.
+
+## 1. Obtain Your Credentials
+
+You will need three pieces of information from your Tako.id account:
+
+### A. Creator Name
+This is your unique handle on Tako.id.
+- Found in your **Profile Settings**.
+- *Example:* `Halcy`
+
+### B. API Key
+Used to create donation requests.
+- Go to the **Developer Dashboard** or **API Settings**.
+- Look for **"Private API Key"**.
+- [Screenshot: The Tako.id Developer Dashboard highlighting the API Key section]
+
+### C. Webhook Token
+Used to verify that payment notifications actually come from Tako.id.
+- Found in your **Webhook Settings**.
+- [Screenshot: The Webhook settings page on Tako.id showing where the secret token is located]
+
+## 2. Configure `config.yml`
+
+Open `plugins/plsDonate-Express/config.yml` and locate the `tako` section. Enter your credentials there:
+
+```yaml
+tako:
+  creator: "YourCreatorName"
+  api-key: "your_secret_api_key_here"
+  webhook-token: "your_secret_token_here"
+```
+
+## 3. Webhook Listener & Network Setup
+
+The plugin starts an internal server to "listen" for Tako.id notifications.
+
+```yaml
+webhook:
+  port: 21172
+  path: "plsdonate"
+```
+
+### Critical: Port Forwarding
+If you are running your server from a local computer or a home network, Tako.id **cannot** send notifications to your server unless you open a path for them.
+
+1.  **Open Port 21172:** You must port-forward port `21172` (TCP) in your router settings to your server's local IP.
+2.  **Firewall:** Ensure your OS firewall (Windows Firewall or Linux `ufw`) allows incoming traffic on port `21172`.
+3.  **Local Environment Warning:** If the plugin detects a local IP, it will warn you in the console. You can use services like **ngrok** or **Playit.gg** as an alternative to manual port forwarding.
+
+[Screenshot: Router port forwarding configuration page showing port 21172 being opened]
+
+## 4. Testing the Connection
+Once configured, restart the plugin. Check the console for:
+`[plsDonate] Webhook listener started on port 21172 at path /plsdonate`
+
+If you see this, your server is ready to receive payments!

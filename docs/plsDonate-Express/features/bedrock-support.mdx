@@ -1,0 +1,25 @@
+# Bedrock Integration
+
+**plsDonate-Express** is built with mobile and console players in mind. Thanks to our integration with **Floodgate** and **Geyser**, Bedrock players get a premium, native experience.
+
+## Native UI Forms
+Instead of relying on chat links (which can be difficult to click on mobile or consoles), the plugin automatically detects Bedrock players and displays a **Cumulus Form**.
+
+[Screenshot: A Bedrock Edition player seeing a native UI modal with 'Yes' and 'No' buttons to confirm their donation]
+
+### How it works:
+1.  A Bedrock player types `/donate ...`.
+2.  The plugin detects the player is on Bedrock via Floodgate.
+3.  Instead of a chat message, a native UI modal appears with the donation details.
+4.  When the player clicks **"Yes"**, the donation is processed, and the payment link is sent to their **Email**.
+
+## Automatic Detection
+You don't need to configure anything special! As long as you have **Floodgate** installed, the plugin will automatically enable this feature.
+
+You can verify it is active in your `config.yml`:
+```yaml
+bedrock-support: true # Usually auto-enabled if Floodgate is found
+```
+
+## Email Link Delivery
+Since Bedrock players cannot easily copy/paste from Minecraft chat, the plugin **requires** an email address during the `/donate` command. The clickable payment link is sent directly to their inbox, allowing them to open it on their phone or computer easily.

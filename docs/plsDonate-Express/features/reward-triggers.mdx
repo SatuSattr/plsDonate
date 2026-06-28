@@ -1,0 +1,84 @@
+# Rewards (Triggers)
+
+The **Triggers** system allows you to automate rewards. You can execute any console command when a donation is received, based on specific conditions.
+
+## How it Works
+Triggers are defined in `plugins/plsDonate-Express/triggers.yml`. Each trigger consists of **Conditions** (when to run) and **Commands** (what to do).
+
+## 1. Placeholders
+Use these placeholders in your commands and conditions:
+- `{player}`: The name of the donor.
+- `{amount}`: Raw amount (e.g., `50000`).
+- `{message}`: The donation message.
+- `{method}`: The payment method used.
+
+## 2. Advanced Conditions
+Conditions use a `<left> <operator> <right>` syntax.
+- **Operators:** `==`, `!=`, `>`, `>=`, `<`, `<=`, `contains`.
+
+**Example:**
+```yaml
+vip_rank_trigger:
+  enabled: true
+  conditions:
+    - "{amount} >= 50000"
+  commands:
+    - "lp user {player} parent add vip"
+    - "minecraft:broadcast {player} just bought VIP rank!"
+```
+
+## 3. Math Scaling Rewards
+You can perform math calculations inside your commands using `{math: <expression>}`. This is perfect for "1 diamond per 1,000" type rewards.
+
+**Rounding Functions:** `floor()`, `ceil()`, `round()`.
+
+**Example:**
+```yaml
+scaling_diamonds:
+  enabled: true
+  conditions:
+    - "{amount} >= 1000"
+  commands:
+    - "minecraft:give {player} diamond {math: floor({amount} / 1000)}"
+```
+
+## 4. Offline Donor Support (`require_online`)
+If a player donates while they are not on the server, you might want to wait until they log in to give them items.
+
+- Set `require_online: true`.
+- If the player is offline, the command is saved to the database.
+- The command executes automatically the moment they join the server.
+
+```yaml
+offline_safe_reward:
+  enabled: true
+  require_online: true
+  commands:
+    - "minecraft:give {player} netherite_ingot 1"
+```
+
+---
+
+## 5. Real-World Example: CoinsEngine Integration
+
+A common and highly effective way to use triggers is by integrating them with an economy plugin like **CoinsEngine**. This allows players to buy "Coins" with real money, which they can then use in your server shop.
+
+**Scenario:** For every Rp1.000 donated, grant the player 1 Coin. If they donate **Rp40.000**, they automatically get **40 Coins**.
+
+```yaml
+coins_engine_reward:
+  enabled: true
+  require_online: false # CoinsEngine usually works offline
+  conditions:
+    - "{amount} >= 1000"
+  commands:
+    # Grant 1 coin for every 1,000 units donated
+    - "coins add {player} {math: floor({amount} / 1000)}"
+    - "minecraft:tellraw {player} {\"text\":\"You received {math: floor({amount} / 1000)} Coins!\",\"color\":\"gold\"}"
+```
+
+---
+
+## Pro-Tip: Vanilla Command Prefix
+To ensure compatibility with plugins like EssentialsX, always prefix vanilla commands with `minecraft:`.
+*Use:* `minecraft:give` instead of `give`.

@@ -1,0 +1,48 @@
+# Email & SMTP Setup
+
+**plsDonate-Express** sends professional email receipts to your donors. This is especially important for **Bedrock Edition** players, as it provides them with a clickable payment link outside of the Minecraft interface.
+
+## Why use SMTP?
+By default, the plugin requires an SMTP host to send emails. We highly recommend using **Gmail** for its reliability.
+
+## 1. Creating a Gmail App Password
+For security, Gmail does not allow apps to use your main account password. You must generate an **App Password**.
+
+1.  Go to your **Google Account Settings**.
+2.  Navigate to **Security**.
+3.  Enable **2-Step Verification** (required for App Passwords).
+4.  Search for **"App passwords"** in the search bar.
+5.  Select **"Other (Custom name)"** and name it "Minecraft Donation Plugin".
+6.  Copy the 16-character code provided.
+
+[Screenshot: The Google Account App Passwords screen showing a generated 16-character code]
+
+## 2. Configure `config.yml`
+
+In your `config.yml`, find the `email` section. You can set up multiple hosts for fallback reliability.
+
+```yaml
+email:
+  from-name: "Your Server Name"
+  subject: "Your Donation Payment Link - Thank You!"
+  
+  hosts:
+    "1":
+      host: "smtp.gmail.com"
+      port: 587
+      user: "your-email@gmail.com"
+      pass: "your-16-character-app-password" # Use the code you just copied
+      secure: false # Keep false for port 587 (STARTTLS)
+      from:
+        name: "Server Donations"
+        email: "donations@yourserver.com" # Optional
+```
+
+## 3. How the Fallback Works
+If "Host 1" fails to send (e.g., due to a temporary outage or rate limit), the plugin will automatically try "Host 2", and so on. This ensures your donors always receive their links.
+
+## 4. Verifying Setup
+When a player runs `/donate`, the plugin will attempt to send an email. If successful, you will see a confirmation in the console:
+`[plsDonate] Successfully sent payment email to user@example.com using host 1`
+
+[Screenshot: Server console showing a successful email delivery log]

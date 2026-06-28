@@ -20,7 +20,7 @@ format:
 
 # Tako.id API Integration
 tako:
-  # Your creator name on tako.id.
+  # Your creator name on tako.id. (case sensitive)
   creator: ""
 
   # Your private API key from the tako.id creator dashboard.

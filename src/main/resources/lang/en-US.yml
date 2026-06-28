@@ -12,6 +12,11 @@ max-donation-error: "{PREFIX} <white>Sorry, <red>maximum <white>amount of donati
 invalid-email: "{PREFIX} <white>Please <red>provide <white>a valid email <gray>example: (your@gmail.com)"
 message-length-error: "{PREFIX} <white>Sorry, <red>maximal length <white>of the message is <yellow>{LIMIT} Character. <white>Please shorten your message."
 startup-success: "{PREFIX} plsDonate-Express has been <green>loaded successfully! <reset>Webhook is listening on port <yellow>{PORT}"
+local-env-warning:
+  - "{PREFIX} <red>[!] LOCAL ENVIRONMENT DETECTED [!]"
+  - "{PREFIX} <yellow>It seems you are running this server in a local environment."
+  - "{PREFIX} <yellow>Please ensure that your webhook port (<white>{PORT}<yellow>) is accessible from the internet."
+  - "{PREFIX} <yellow>You might need to use <white>Port Forwarding <yellow>or <white>ngrok <yellow>to make it work."
 webhook-token-warning: "{PREFIX} <red>[!] WARNING: Your webhook token is still using the default value! Please change it in config.yml for security. <reset>"
 
 donation-tab-completions-args2:
@@ -86,57 +91,59 @@ api-error: "{PREFIX} <red>API Error: {ERROR}</red>"
 overlay-disabled: "{PREFIX} <red>Overlay API is not configured! Please check your config.yml</red>"
 
 # Available Placeholders: {PREFIX}, {RANK}, {NAME}, {AMOUNT}, {AMOUNT_FORMATTED}
-leaderboard-header: <gray><st>          <reset> <green>plsDonate <yellow><u>Leaderboard</u>
+leaderboard-header:
+  <gray><st>          <reset> <green>plsDonate <yellow><u>Leaderboard</u>
   <gray><st>          <br>
 leaderboard-format: <yellow>{RANK}. <white>{NAME} <gray>- <green>Rp{AMOUNT_FORMATTED}
 leaderboard-empty: <gray>No donation records found.
-leaderboard-footer: '<br><gray><st>                                                    '
+leaderboard-footer: "<br><gray><st>                                                    "
 
 # Available Placeholders: {PREFIX}, {TITLE}, {CURRENT}, {TARGET}, {CURRENT_FORMATTED}, {TARGET_FORMATTED}, {PERCENT}, {START_DATE}, {START_TIME}
-milestone-header: <gray><st>          <reset> <green>plsDonate <gold><u>Milestone</u>
+milestone-header:
+  <gray><st>          <reset> <green>plsDonate <gold><u>Milestone</u>
   <gray><st>          <br>
-milestone-title: '  <white>Title: <yellow>{TITLE}'
-milestone-progress: '  <white>Progress: <green>Rp{CURRENT_FORMATTED} <gray>/ <red>Rp{TARGET_FORMATTED}'
-milestone-percentage: '  <white>Percentage: <aqua>{PERCENT}%'
-milestone-footer: '<br><gray><st>                                              '
+milestone-title: "  <white>Title: <yellow>{TITLE}"
+milestone-progress: "  <white>Progress: <green>Rp{CURRENT_FORMATTED} <gray>/ <red>Rp{TARGET_FORMATTED}"
+milestone-percentage: "  <white>Percentage: <aqua>{PERCENT}%"
+milestone-footer: "<br><gray><st>                                              "
 
 # Transaction Management Messages
 # Available Placeholders (General): {PREFIX}
-transaction-help-header: '<gray><st>          <reset> <green>plsDonate <gold><u>Transaction Help</u> <gray><st>          '
-transaction-help-list: '  <yellow>/pdn transaction list [page] <gray>- List transactions'
-transaction-help-info: '  <yellow>/pdn transaction info <id> <gray>- Detailed info'
-transaction-help-add: '  <yellow>/pdn transaction add <player> <amount> [method] <gray>- Manual add'
-transaction-help-delete: '  <yellow>/pdn transaction delete <id> <gray>- Delete record'
-transaction-help-setstatus: '  <yellow>/pdn transaction setstatus <id> <status> <gray>- Force status'
-transaction-help-clear: '  <yellow>/pdn transaction clear <player|all> <gray>- Mass delete'
-transaction-help-footer: '<gray><st>                                                    '
+transaction-help-header: "<gray><st>          <reset> <green>plsDonate <gold><u>Transaction Help</u> <gray><st>          "
+transaction-help-list: "  <yellow>/pdn transaction list [page] <gray>- List transactions"
+transaction-help-info: "  <yellow>/pdn transaction info <id> <gray>- Detailed info"
+transaction-help-add: "  <yellow>/pdn transaction add <player> <amount> [method] <gray>- Manual add"
+transaction-help-delete: "  <yellow>/pdn transaction delete <id> <gray>- Delete record"
+transaction-help-setstatus: "  <yellow>/pdn transaction setstatus <id> <status> <gray>- Force status"
+transaction-help-clear: "  <yellow>/pdn transaction clear <player|all> <gray>- Mass delete"
+transaction-help-footer: "<gray><st>                                                    "
 
 # Available Placeholders: {PAGE}, {TOTAL_PAGES}, {NEXT_PAGE}, {ID}, {NAME}, {AMOUNT_FORMATTED}, {STATUS_COLORED}
-transaction-list-header: '<gray><st>          <reset> <green>plsDonate <yellow><u>Transactions (Page {PAGE}/{TOTAL_PAGES})</u> <gray><st>          '
+transaction-list-header: "<gray><st>          <reset> <green>plsDonate <yellow><u>Transactions (Page {PAGE}/{TOTAL_PAGES})</u> <gray><st>          "
 transaction-list-format: '<gray>#<white><click:run_command:"/pdn transaction info {ID}"><hover:show_text:"<gray>Click for details">{ID}</hover></click> <gray>| <white>{NAME} <gray>| <green>Rp{AMOUNT_FORMATTED} <gray>| {STATUS_COLORED}'
-transaction-list-empty: '<gray>No transactions found in database.'
-transaction-list-footer: '<gray><st>                                                    '
+transaction-list-empty: "<gray>No transactions found in database."
+transaction-list-footer: "<gray><st>                                                    "
 transaction-list-next-btn: ' <yellow><click:run_command:"/pdn transaction list {NEXT_PAGE}"><hover:show_text:"<gray>Click for next page">[Next Page »]</hover></click>'
 
 # Available Placeholders: {ID}, {TX_ID}, {NAME}, {AMOUNT_FORMATTED}, {STATUS_COLORED}, {TYPE_COLORED}, {DATE}, {COMPLETED_AT}, {CHECKSUM}
-transaction-info-header: '<gray><st>          <reset> <green>plsDonate <gold><u>Transaction Details: #{ID}</u> <gray><st>          '
-transaction-info-txid: ' <gray>» <white>TX-ID: <yellow>{TX_ID}'
-transaction-info-donor: ' <gray>» <white>Donor: <yellow>{NAME}'
-transaction-info-amount: ' <gray>» <white>Amount: <green>Rp{AMOUNT_FORMATTED}'
-transaction-info-status: ' <gray>» <white>Status: {STATUS_COLORED}'
-transaction-info-type: ' <gray>» <white>Type: {TYPE_COLORED}'
-transaction-info-date: ' <gray>» <white>Date: <gray>{DATE}'
-transaction-info-completed: ' <gray>» <white>Completed: <gray>{COMPLETED_AT}'
-transaction-info-checksum: ' <gray>» <white>Checksum: <dark_gray>{CHECKSUM}'
-transaction-info-footer: '<gray><st>                                                    '
+transaction-info-header: "<gray><st>          <reset> <green>plsDonate <gold><u>Transaction Details: #{ID}</u> <gray><st>          "
+transaction-info-txid: " <gray>» <white>TX-ID: <yellow>{TX_ID}"
+transaction-info-donor: " <gray>» <white>Donor: <yellow>{NAME}"
+transaction-info-amount: " <gray>» <white>Amount: <green>Rp{AMOUNT_FORMATTED}"
+transaction-info-status: " <gray>» <white>Status: {STATUS_COLORED}"
+transaction-info-type: " <gray>» <white>Type: {TYPE_COLORED}"
+transaction-info-date: " <gray>» <white>Date: <gray>{DATE}"
+transaction-info-completed: " <gray>» <white>Completed: <gray>{COMPLETED_AT}"
+transaction-info-checksum: " <gray>» <white>Checksum: <dark_gray>{CHECKSUM}"
+transaction-info-footer: "<gray><st>                                                    "
 
 # Available Placeholders (Success/Error): {ID}, {STATUS}, {TARGET}
-transaction-added: '{PREFIX} <green>Transaction added successfully!'
-transaction-deleted: '{PREFIX} <green>Transaction #{ID} has been deleted.'
-transaction-status-updated: '{PREFIX} <green>Status of #{ID} updated to <yellow>{STATUS}.'
-transaction-cleared: '{PREFIX} <green>Successfully cleared transactions for: <yellow>{TARGET}.'
-transaction-not-found: '{PREFIX} <red>Transaction not found.'
-transaction-invalid-id: '{PREFIX} <red>Invalid transaction ID.'
-transaction-invalid-amount: '{PREFIX} <red>Invalid amount format.'
+transaction-added: "{PREFIX} <green>Transaction added successfully!"
+transaction-deleted: "{PREFIX} <green>Transaction #{ID} has been deleted."
+transaction-status-updated: "{PREFIX} <green>Status of #{ID} updated to <yellow>{STATUS}."
+transaction-cleared: "{PREFIX} <green>Successfully cleared transactions for: <yellow>{TARGET}."
+transaction-not-found: "{PREFIX} <red>Transaction not found."
+transaction-invalid-id: "{PREFIX} <red>Invalid transaction ID."
+transaction-invalid-amount: "{PREFIX} <red>Invalid amount format."
 
-loading-overlay: '{PREFIX} <gray>Fetching data from API... Please wait.'
+loading-overlay: "{PREFIX} <gray>Fetching data from API... Please wait."

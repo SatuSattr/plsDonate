@@ -1,0 +1,72 @@
+# Configuration Files Explained
+
+This page provides a high-detail reference for the core configuration files of **plsDonate-Express**.
+
+---
+
+## 1. `config.yml` (Main Configuration)
+
+This file manages the plugin's global behavior and external connections.
+
+### Tako.id Settings
+- `creator`: Your unique handle on Tako.id.
+- `api-key`: Your private API key used to generate payment links.
+- `webhook-token`: The secret token used to verify that incoming payment notifications are authentic.
+
+### Webhook Networking
+- `port`: The port where the plugin listens for webhooks. 
+    - *Tip:* On panels like Pterodactyl, this must match an assigned "Additional Port".
+- `path`: The sub-path for the webhook. By default, it is `plsdonate`. 
+    - *Full URL:* `http://your-ip:port/plsdonate`
+
+### Donation Limits & Logic
+- `donate.amount.min`: The absolute minimum donation allowed by the plugin (default 1000).
+- `donate.cooldown`: How many seconds a player must wait between donation requests.
+- `donate.confirmation`: If set to `true`, players must click **[Yes]** in-game before a payment request is sent.
+
+### Payment Method Minimums
+The plugin respects the hard minimums set by Tako.id:
+- **QRIS:** No minimum (plugin default is 1,000).
+- **GoPay:** Minimum Rp10.000.
+- **PayPal:** Minimum Rp50.000.
+
+---
+
+## 2. `en-US.yml` (Language & Localization)
+
+Located in the `lang/` folder, this file controls all text displayed to your players.
+
+### Formatting with MiniMessage
+We use the **MiniMessage** format, which allows you to use hex colors and interactive tags easily.
+- **Colors:** `<green>`, `<red>`, `<#FFD700>` (Gold).
+- **Interactions:** `<hover:show_text:"Text">`, `<click:run_command:"/cmd">`.
+
+### Dynamic Placeholders
+Messages support placeholders that are replaced with real data at runtime:
+- `{PREFIX}`: The plugin prefix defined at the top of the file.
+- `{PLAYER}`: The name of the donator.
+- `{AMOUNT_FORMATTED}`: The formatted currency amount.
+- `{METHOD_COLORED}`: The payment method with its associated color.
+
+---
+
+## 3. `payment.html` (Email Template)
+
+Located in the `templates/` folder, this is the body of the email receipt sent to donors.
+
+### Key Placeholders
+You must include these in your HTML so players can see their transaction details:
+- `{LINK}`: The clickable URL to the Tako.id payment page.
+- `{AMOUNT_FORMATTED}`: The total amount to be paid.
+- `{PLAYER}`: The player's username.
+
+### Customizing the Design
+You can safely edit the HTML/CSS in this file. 
+- **Recommendation:** Use a drag-and-drop email builder (like **Beefree.io**) to design a professional receipt, then export the code and insert our placeholders into the relevant sections.
+
+---
+
+## 4. `database.db` (Transaction Ledger)
+This is an SQLite database that stores every transaction's history, status, and checksum.
+- **Safety Rule:** Do **NOT** attempt to open or edit this file while the server is running. 
+- **Security:** This file is used to prevent "Replay Attacks" (where someone tries to reuse an old payment notification to get free rewards).

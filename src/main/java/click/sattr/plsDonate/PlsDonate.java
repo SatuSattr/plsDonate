@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class PlsDonate extends JavaPlugin implements Listener {
@@ -73,7 +74,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         } else {
             // If it exists, update it
             try {
-                ConfigUpdater.update(this, "config.yml", configFile, Collections.emptyList());
+                ConfigUpdater.update(this, "config.yml", configFile, List.of("email.hosts"));
             } catch (IOException e) {
                 getLogger().severe("Could not update config.yml!");
                 e.printStackTrace();
@@ -150,8 +151,39 @@ public final class PlsDonate extends JavaPlugin implements Listener {
             placeholders.put("{PORT}", String.valueOf(getConfig().getInt(Constants.CONF_WEBHOOK_PORT, Constants.DEFAULT_WEBHOOK_PORT)));
             Bukkit.getConsoleSender().sendMessage(MessageUtils.parseMessage(langConfig.getString("startup-success", "{PREFIX} <green>plsDonate version " + getPluginMeta().getVersion() + " loaded!</green>"), placeholders));
             
+            if (isLocalEnvironment()) {
+                List<String> warningLines = langConfig.getStringList("local-env-warning");
+                if (!warningLines.isEmpty()) {
+                    for (String line : warningLines) {
+                        Bukkit.getConsoleSender().sendMessage(MessageUtils.parseMessage(line, placeholders));
+                    }
+                }
+            }
+
             checkImportantConfigs();
         });
+    }
+
+    private boolean isLocalEnvironment() {
+        try {
+            java.util.Enumeration<java.net.NetworkInterface> interfaces = java.net.NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                java.net.NetworkInterface networkInterface = interfaces.nextElement();
+                if (networkInterface.isLoopback() || !networkInterface.isUp()) continue;
+
+                java.util.Enumeration<java.net.InetAddress> addresses = networkInterface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    java.net.InetAddress address = addresses.nextElement();
+                    if (address instanceof java.net.Inet4Address) {
+                        if (!address.isLoopbackAddress() && !address.isSiteLocalAddress() && !address.isLinkLocalAddress()) {
+                            return false; // Found a non-local address
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return true;
     }
 
     private void checkAndAutoEnableBedrockSupport() {
@@ -254,14 +286,14 @@ public final class PlsDonate extends JavaPlugin implements Listener {
     }
 
     public void reloadPlugin() {
-        getLogger().info("Reloading plsDonate-Express configuration...");
+        getLogger().info("Reloading plsDonate configuration...");
         if (webhookManager != null) {
             webhookManager.stop();
         }
 
         File configFile = new File(getDataFolder(), "config.yml");
         try {
-            ConfigUpdater.update(this, "config.yml", configFile, Collections.emptyList());
+            ConfigUpdater.update(this, "config.yml", configFile, List.of("email.hosts"));
         } catch (IOException e) {
             getLogger().severe("Could not update config.yml during reload!");
             e.printStackTrace();
@@ -295,12 +327,12 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         }
 
         checkImportantConfigs();
-        getLogger().info("plsDonate-Express reload complete.");
+        getLogger().info("plsDonate reload complete.");
     }
 
     public void loadActivePlatform() {
         donationPlatform = new TakoPlatform(this);
-        getLogger().info("Donation Platform: Tako.id Enabled (Express Version)");
+        getLogger().info("Donation Platform: Tako.id Enabled");
     }
 
     private void saveDefaultTemplates() {
