@@ -1,1 +1,1 @@
-![plsDonate Banner](https://i.imgur.com/KzWcLSU.png)
+![plsDonate Banner](https://i.imgur.com/ZNpXdLN.png)
