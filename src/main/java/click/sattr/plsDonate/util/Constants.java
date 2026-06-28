@@ -22,9 +22,19 @@ public final class Constants {
     public static final String ERROR = "{ERROR}";
     public static final String TIME = "{TIME}";
 
-    // Permissions
-    public static final String PERM_ADMIN = "plsdonate.admin";
-    public static final String PERM_COOLDOWN_BYPASS = "plsdonate.cooldown.bypass";
+    // Permissions — /donate (plsdonate.donate.*)
+    public static final String PERM_DONATE_REQUEST = "plsdonate.donate.request";
+    public static final String PERM_DONATE_TOP = "plsdonate.donate.top";
+    public static final String PERM_DONATE_MILESTONE = "plsdonate.donate.milestone";
+    public static final String PERM_DONATE_HELP = "plsdonate.donate.help";
+    public static final String PERM_DONATE_BYPASS_COOLDOWN = "plsdonate.donate.bypasscooldown";
+
+    // Permissions — /pdn (plsdonate.admin.*)
+    public static final String PERM_ADMIN_HELP = "plsdonate.admin.help";
+    public static final String PERM_ADMIN_TRANSACTION = "plsdonate.admin.transaction";
+    public static final String PERM_ADMIN_FAKEDONATE = "plsdonate.admin.fakedonate";
+    public static final String PERM_ADMIN_PUSHDONATE = "plsdonate.admin.pushdonate";
+    public static final String PERM_ADMIN_RELOAD = "plsdonate.admin.reload";
 
     // Configuration Paths
     public static final String CONF_WEBHOOK_PORT = "webhook.port";

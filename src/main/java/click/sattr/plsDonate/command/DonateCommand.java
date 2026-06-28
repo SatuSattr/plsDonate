@@ -52,6 +52,10 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
 
         // Help: accept any trailing args so "/donate help foo bar" still shows help
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
+            if (!player.hasPermission(Constants.PERM_DONATE_HELP)) {
+                MessageUtils.sendLangMessage(player, plugin, "no-permission", null);
+                return true;
+            }
             Map<String, String> p = new HashMap<>();
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
             p.put(Constants.COMMAND, label);
@@ -61,6 +65,10 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
 
         // Leaderboard / top — viewable by regular players, served from the in-memory cache
         if (args[0].equalsIgnoreCase("leaderboard") || args[0].equalsIgnoreCase("top")) {
+            if (!player.hasPermission(Constants.PERM_DONATE_TOP)) {
+                MessageUtils.sendLangMessage(player, plugin, "no-permission", null);
+                return true;
+            }
             int page = 1;
             if (args.length >= 2) {
                 try {
@@ -74,7 +82,17 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
 
         // Milestone — viewable by regular players, served from the in-memory cache
         if (args[0].equalsIgnoreCase("milestone")) {
+            if (!player.hasPermission(Constants.PERM_DONATE_MILESTONE)) {
+                MessageUtils.sendLangMessage(player, plugin, "no-permission", null);
+                return true;
+            }
             plugin.getStatsManager().displayMilestone(player);
+            return true;
+        }
+
+        // Everything below this point is the donation request flow (MD5 confirmation + new request)
+        if (!player.hasPermission(Constants.PERM_DONATE_REQUEST)) {
+            MessageUtils.sendLangMessage(player, plugin, "no-permission", null);
             return true;
         }
 
@@ -98,7 +116,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         }
 
         // Cooldown Check
-        if (!player.hasPermission(Constants.PERM_COOLDOWN_BYPASS)) {
+        if (!player.hasPermission(Constants.PERM_DONATE_BYPASS_COOLDOWN)) {
             long lastUsage = cooldowns.getOrDefault(player.getUniqueId(), 0L);
             int cooldownSeconds = plugin.getConfig().getInt(Constants.CONF_DONATE_COOLDOWN, 10);
             long currentTime = System.currentTimeMillis();

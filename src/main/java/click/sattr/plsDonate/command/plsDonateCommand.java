@@ -55,7 +55,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn help <gray>- Show this help message", p));
             sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn leaderboard <gray>(or <yellow>top<gray>) - Show top donators", p));
             sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn milestone <gray>- Show donation goal", p));
-            if (sender.hasPermission(Constants.PERM_ADMIN)) {
+            if (sender.hasPermission(Constants.PERM_ADMIN_HELP)) {
                 sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn transaction <gray>- Manage transactions", p));
                 sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn fakedonate <amount> <email> <method> [msg] <gray>- Simulate a sandbox donation (Hidden from stats)", p));
                 sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn pushdonate <amount> <email> <method> [msg] <gray>- Simulate a real donation (Included in stats)", p));
@@ -66,6 +66,10 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args[0].equalsIgnoreCase("leaderboard") || args[0].equalsIgnoreCase("top")) {
+            if (!sender.hasPermission(Constants.PERM_DONATE_TOP)) {
+                MessageUtils.sendLangMessage(sender, plugin, "no-permission", null);
+                return true;
+            }
             int page = 1;
             if (args.length >= 2) {
                 try {
@@ -78,11 +82,15 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args[0].equalsIgnoreCase("milestone")) {
+            if (!sender.hasPermission(Constants.PERM_DONATE_MILESTONE)) {
+                MessageUtils.sendLangMessage(sender, plugin, "no-permission", null);
+                return true;
+            }
             plugin.getStatsManager().displayMilestone(sender);
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("transaction") && sender.hasPermission(Constants.PERM_ADMIN)) {
+        if (args[0].equalsIgnoreCase("transaction") && sender.hasPermission(Constants.PERM_ADMIN_TRANSACTION)) {
             if (args.length == 1) {
                 Map<String, String> p = new HashMap<>();
                 p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
@@ -247,7 +255,8 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             String sub = args[0].toLowerCase();
             boolean isSandbox = sub.equals("fakedonate");
 
-            if (!sender.hasPermission(Constants.PERM_ADMIN)) {
+            String requiredPerm = isSandbox ? Constants.PERM_ADMIN_FAKEDONATE : Constants.PERM_ADMIN_PUSHDONATE;
+            if (!sender.hasPermission(requiredPerm)) {
                 MessageUtils.sendLangMessage(sender, plugin, "no-permission", null);
                 return true;
             }
@@ -354,7 +363,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
 
 
         if (args[0].equalsIgnoreCase("reload")) {
-            if (!sender.hasPermission(Constants.PERM_ADMIN)) {
+            if (!sender.hasPermission(Constants.PERM_ADMIN_RELOAD)) {
                 MessageUtils.sendLangMessage(sender, plugin, "no-permission", null);
                 return true;
             }
@@ -501,19 +510,19 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
         if (args.length == 1) {
             String sub = args[0].toLowerCase();
-            if ("fakedonate".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN)) completions.add("fakedonate");
-            if ("pushdonate".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN)) completions.add("pushdonate");
-            if ("reload".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN)) completions.add("reload");
-            if ("leaderboard".startsWith(sub)) completions.add("leaderboard");
-            if ("top".startsWith(sub)) completions.add("top");
-            if ("milestone".startsWith(sub)) completions.add("milestone");
-            if ("transaction".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN)) completions.add("transaction");
+            if ("fakedonate".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN_FAKEDONATE)) completions.add("fakedonate");
+            if ("pushdonate".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN_PUSHDONATE)) completions.add("pushdonate");
+            if ("reload".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN_RELOAD)) completions.add("reload");
+            if ("leaderboard".startsWith(sub) && sender.hasPermission(Constants.PERM_DONATE_TOP)) completions.add("leaderboard");
+            if ("top".startsWith(sub) && sender.hasPermission(Constants.PERM_DONATE_TOP)) completions.add("top");
+            if ("milestone".startsWith(sub) && sender.hasPermission(Constants.PERM_DONATE_MILESTONE)) completions.add("milestone");
+            if ("transaction".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN_TRANSACTION)) completions.add("transaction");
             if ("help".startsWith(sub)) completions.add("help");
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("leaderboard") || args[0].equalsIgnoreCase("top"))) {
             completions.add("1");
             completions.add("2");
             completions.add("3");
-        } else if (args.length >= 2 && args[0].equalsIgnoreCase("transaction") && sender.hasPermission(Constants.PERM_ADMIN)) {
+        } else if (args.length >= 2 && args[0].equalsIgnoreCase("transaction") && sender.hasPermission(Constants.PERM_ADMIN_TRANSACTION)) {
             if (args.length == 2) {
                 String sub = args[1].toLowerCase();
                 List<String> subs = List.of("list", "info", "delete", "setstatus", "clear");
@@ -530,7 +539,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                 List<String> stats = List.of("PENDING", "COMPLETED", "VOID");
                 for (String s : stats) if (s.toLowerCase().startsWith(args[3].toLowerCase())) completions.add(s);
             }
-        } else if (args.length > 1 && (args[0].equalsIgnoreCase("fakedonate") || args[0].equalsIgnoreCase("pushdonate")) && sender.hasPermission(Constants.PERM_ADMIN)) {
+        } else if (args.length > 1 && (args[0].equalsIgnoreCase("fakedonate") || args[0].equalsIgnoreCase("pushdonate")) && sender.hasPermission(args[0].equalsIgnoreCase("fakedonate") ? Constants.PERM_ADMIN_FAKEDONATE : Constants.PERM_ADMIN_PUSHDONATE)) {
             if (args.length == 2) {
                 String sub = args[1].toLowerCase();
                 double min = plugin.getConfig().getDouble(Constants.CONF_DONATE_MIN_AMOUNT, 1000);

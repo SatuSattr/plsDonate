@@ -9,3 +9,34 @@ commands:
   donate:
     description: Main donation command
 softdepend: [floodgate, Geyser-Spigot, Geyser, PlaceholderAPI]
+permissions:
+  plsdonate.donate.request:
+    description: Create a donation request via /donate
+    default: true
+  plsdonate.donate.top:
+    description: View the donation leaderboard
+    default: true
+  plsdonate.donate.milestone:
+    description: View the donation milestone
+    default: true
+  plsdonate.donate.help:
+    description: View the /donate help message
+    default: true
+  plsdonate.donate.bypasscooldown:
+    description: Bypass the /donate cooldown
+    default: op
+  plsdonate.admin.help:
+    description: View admin commands in /pdn help
+    default: op
+  plsdonate.admin.transaction:
+    description: Manage transaction records
+    default: op
+  plsdonate.admin.fakedonate:
+    description: Simulate a sandbox donation
+    default: op
+  plsdonate.admin.pushdonate:
+    description: Simulate a real donation
+    default: op
+  plsdonate.admin.reload:
+    description: Reload the plugin configuration
+    default: op
