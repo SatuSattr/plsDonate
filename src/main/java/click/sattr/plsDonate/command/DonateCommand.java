@@ -105,6 +105,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         double amount;
         try {
             amount = Double.parseDouble(args[0]);
+            if (!Double.isFinite(amount)) throw new NumberFormatException("non-finite amount");
         } catch (NumberFormatException e) {
             Map<String, String> p = new HashMap<>();
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));

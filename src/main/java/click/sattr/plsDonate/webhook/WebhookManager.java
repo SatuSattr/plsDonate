@@ -10,9 +10,9 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.bukkit.Bukkit;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -60,14 +60,24 @@ public class WebhookManager {
 
             try {
                 String body;
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))) {
-                    char[] buffer = new char[MAX_BODY_SIZE + 1];
-                    int read = reader.read(buffer, 0, MAX_BODY_SIZE + 1);
-                    if (read > MAX_BODY_SIZE) {
-                        sendResponse(exchange, 413, "Payload Too Large");
+                try (InputStream is = exchange.getRequestBody()) {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    byte[] chunk = new byte[8192];
+                    int total = 0;
+                    int n;
+                    while ((n = is.read(chunk)) != -1) {
+                        total += n;
+                        if (total > MAX_BODY_SIZE) {
+                            sendResponse(exchange, 413, "Payload Too Large");
+                            return;
+                        }
+                        baos.write(chunk, 0, n);
+                    }
+                    if (total == 0) {
+                        sendResponse(exchange, 400, "Bad Request - Empty Body");
                         return;
                     }
-                    body = new String(buffer, 0, read);
+                    body = baos.toString(StandardCharsets.UTF_8);
                 }
 
                 // Call active platform to parse and verify the webhook
@@ -81,21 +91,28 @@ public class WebhookManager {
 
                 String transactionId = result.transactionId();
 
-                // Validate against Ledger to prevent replay attacks
+                // Integrity check: transaction exists, is still PENDING, and the checksum
+                // (amount + donor recorded at request time) matches.
                 if (!plugin.getTransactionRepository().isTransactionValid(transactionId, result.amount(), result.donorName())) {
                     plugin.getLogger().warning("Received potential replay attack or unrecorded transaction: " + transactionId + " from " + result.donorName());
                     sendResponse(exchange, 403, "Forbidden - Transaction used or invalid");
                     return;
                 }
 
+                // Atomically claim the PENDING transaction. Only the single caller that
+                // transitions it to COMPLETED proceeds; concurrent duplicate webhooks lose
+                // the claim, closing the check-then-act race that allowed double fulfillment.
+                if (!plugin.getTransactionRepository().claimTransaction(transactionId)) {
+                    plugin.getLogger().warning("Transaction already claimed (concurrent/replay webhook): " + transactionId);
+                    sendResponse(exchange, 403, "Forbidden - Transaction already processed");
+                    return;
+                }
+
                 // Success - Verification Passed
                 plugin.getLogger().info("Verified donation: " + result.donorName() + " donated " + MessageUtils.formatAmount(plugin, result.amount()) + " (tx: " + transactionId + ")");
-                
+
                 // Determine if it's sandbox (usually false for webhooks, but safety first)
                 boolean isSandbox = plugin.getTransactionRepository().isSandboxTransaction(transactionId);
-
-                // Mark as completed in Ledger synchronously to prevent concurrent double-fulfillment race conditions
-                plugin.getTransactionRepository().markTransactionUsed(transactionId).join();
 
                 // Process Rewards and Notifications
                 Bukkit.getScheduler().runTask(plugin, () -> {

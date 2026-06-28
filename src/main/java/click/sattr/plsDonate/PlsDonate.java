@@ -331,8 +331,12 @@ public final class PlsDonate extends JavaPlugin implements Listener {
     }
 
     public void loadActivePlatform() {
-        donationPlatform = new TakoPlatform(this);
-        getLogger().info("Donation Platform: Tako.id Enabled");
+        // TakoPlatform reads all config per-request, so it never needs recreating on reload.
+        // Recreating would leak the previous instance's HttpClient thread pool.
+        if (donationPlatform == null) {
+            donationPlatform = new TakoPlatform(this);
+            getLogger().info("Donation Platform: Tako.id Enabled");
+        }
     }
 
     private void saveDefaultTemplates() {

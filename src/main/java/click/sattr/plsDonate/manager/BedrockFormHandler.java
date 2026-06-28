@@ -102,7 +102,9 @@ public class BedrockFormHandler {
         plugin.getDonationPlatform().createDonation(player.getName(), email, amount, method, message).thenAccept(response -> {
             if (response.success()) {
                 // Log request to ledger
-                plugin.getTransactionRepository().createDonationRequest(response.transactionId(), amount, player.getName(), false);
+                if (response.transactionId() != null) {
+                    plugin.getTransactionRepository().createDonationRequest(response.transactionId(), amount, player.getName(), false);
+                }
 
                 // Send Email to Bedrock Player
                 plugin.getEmailManager().sendPaymentEmail(

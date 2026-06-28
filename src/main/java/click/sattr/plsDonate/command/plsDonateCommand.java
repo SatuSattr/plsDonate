@@ -292,6 +292,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             double amount;
             try {
                 amount = Double.parseDouble(args[1]);
+                if (!Double.isFinite(amount)) throw new NumberFormatException("non-finite amount");
             } catch (NumberFormatException e) {
                 Map<String, String> p = new HashMap<>();
                 p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
@@ -553,6 +554,8 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
 
     public void clearPendingRequests(UUID uuid) {
         pendingRequests.entrySet().removeIf(entry -> entry.getValue().playerUuid().equals(uuid));
+        String prefix = uuid.toString() + ":";
+        pendingOperations.keySet().removeIf(key -> key.startsWith(prefix));
     }
 
     private boolean isOperationConfirmed(Player player, String actionType, String target) {

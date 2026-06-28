@@ -62,15 +62,39 @@ public class TransactionRepository {
 
     public java.util.concurrent.CompletableFuture<Void> markTransactionUsed(String txId) {
         return java.util.concurrent.CompletableFuture.runAsync(() -> {
-            String sql = "UPDATE transactions SET status = 'COMPLETED', completed_at = ? WHERE tx_id = ?";
-            try (Connection conn = databaseManager.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setLong(1, System.currentTimeMillis() / 1000L);
-                ps.setString(2, txId);
-                ps.executeUpdate();
+            try (Connection conn = databaseManager.getConnection()) {
+                claimPending(conn, txId);
             } catch (SQLException e) {
                 plugin.getLogger().severe("Failed to mark transaction " + txId + " as used: " + e.getMessage());
             }
         });
+    }
+
+    /**
+     * Synchronously claims a PENDING transaction for fulfillment. Returns true only for the
+     * single caller that transitions the row from PENDING to COMPLETED, so concurrent
+     * duplicate webhooks for the same transaction cannot both be fulfilled (replay guard).
+     */
+    public boolean claimTransaction(String txId) {
+        try (Connection conn = databaseManager.getConnection()) {
+            return claimPending(conn, txId) == 1;
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to claim transaction " + txId + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Atomic compare-and-set: marks the transaction COMPLETED only if it is currently PENDING.
+     * Returns the number of rows transitioned (1 if claimed by this call, 0 otherwise).
+     */
+    static int claimPending(Connection conn, String txId) throws SQLException {
+        String sql = "UPDATE transactions SET status = 'COMPLETED', completed_at = ? WHERE tx_id = ? AND status = 'PENDING'";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, System.currentTimeMillis() / 1000L);
+            ps.setString(2, txId);
+            return ps.executeUpdate();
+        }
     }
 
     public List<LeaderboardEntry> getLeaderboard(int limit) {
@@ -230,7 +254,7 @@ public class TransactionRepository {
     }
 
     public double getPlayerTotal(String playerName) {
-        String sql = "SELECT SUM(amount) FROM transactions WHERE donor_name = ? AND status = 'COMPLETED' AND is_sandbox = 0";
+        String sql = "SELECT SUM(amount) FROM transactions WHERE donor_name = ? COLLATE NOCASE AND status = 'COMPLETED' AND is_sandbox = 0";
         try (Connection conn = databaseManager.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, playerName);
             try (ResultSet rs = ps.executeQuery()) {

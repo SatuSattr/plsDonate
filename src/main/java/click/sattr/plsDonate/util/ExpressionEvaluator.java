@@ -30,6 +30,7 @@ public class ExpressionEvaluator {
                 nextChar();
                 double x = parseExpression();
                 if (pos < str.length()) throw new RuntimeException("Unexpected: " + (char)ch);
+                if (!Double.isFinite(x)) throw new RuntimeException("Non-finite result: " + x);
                 return x;
             }
 
@@ -93,10 +94,13 @@ public class ExpressionEvaluator {
         condition = condition.trim();
         String[] operators = {"==", "!=", ">=", "<=", ">", "<", " contains ", " !contains ", " has_permission ", " !has_permission "};
         String foundOp = null;
+        int idx = -1;
 
         for (String op : operators) {
-            if (condition.contains(op)) {
+            int i = indexOfOutsideQuotes(condition, op);
+            if (i >= 0) {
                 foundOp = op;
+                idx = i;
                 break;
             }
         }
@@ -105,7 +109,6 @@ public class ExpressionEvaluator {
             return false;
         }
 
-        int idx = condition.indexOf(foundOp);
         String leftRaw = condition.substring(0, idx).trim();
         String rightRaw = condition.substring(idx + foundOp.length()).trim();
 
@@ -144,6 +147,30 @@ public class ExpressionEvaluator {
                 default -> false;
             };
         }
+    }
+
+    /**
+     * Finds the first index of {@code needle} in {@code haystack} that lies outside any
+     * single- or double-quoted region. This keeps operator characters inside a quoted
+     * operand (e.g. a donor-controlled message) from being mistaken for the condition's
+     * operator.
+     */
+    private static int indexOfOutsideQuotes(String haystack, String needle) {
+        boolean inSingle = false;
+        boolean inDouble = false;
+        int limit = haystack.length() - needle.length();
+        for (int i = 0; i <= limit; i++) {
+            char c = haystack.charAt(i);
+            if (c == '\'' && !inDouble) {
+                inSingle = !inSingle;
+            } else if (c == '"' && !inSingle) {
+                inDouble = !inDouble;
+            }
+            if (!inSingle && !inDouble && haystack.regionMatches(i, needle, 0, needle.length())) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private static String stripQuotes(String s) {
