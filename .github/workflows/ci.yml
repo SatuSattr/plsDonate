@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Cancel an in-progress run when a newer commit is pushed to the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # -nsu  : use cached SNAPSHOTs instead of re-checking upstream each run
+      # retry : retry transient network failures when fetching dependencies
+      - name: Build and test
+        run: mvn -B -nsu -Dmaven.wagon.http.retryHandler.count=3 clean package
+
+      - name: Upload plugin JAR
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plsDonate-jar
+          path: target/plsDonate-*.jar
+          if-no-files-found: error
