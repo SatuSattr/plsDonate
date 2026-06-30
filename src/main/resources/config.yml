@@ -7,17 +7,6 @@ enabled: true
 # Available languages: en-US
 language: "en-US"
 
-# Global Number Formatting
-format:
-  # The locale used for number formatting.
-  # This determines the decimal and thousand separators.
-  # Common Locales by Format:
-  # - id-ID 1.000.000 (Indonesian)
-  # - en-US 1,000,000 (US English)
-  # - fr-FR 1 000 000 (French)
-  # - de-CH 1'000'000 (Swiss German)
-  locale: "id-ID"
-
 # Tako.id API Integration
 tako:
   # Your creator name on tako.id. (case sensitive)
@@ -49,7 +38,7 @@ webhook:
   # The URL path for the webhook. (e.g., http://your-ip:port/plsdonate)
   path: "plsdonate"
 
-# Main Donation Command Settings
+# Donation Feature Configuration
 donate:
   amount:
     # Minimum amount a player can donate per request.
@@ -72,11 +61,69 @@ donate:
 
 # Triggers System
 triggers:
-  # Enable or disable the ente triggers system globally
   enabled: false
 
-# Bedrock Support (Requires GeyserMC and Floodgate on your server)
-bedrock-support: false
+# Discord Webhook Notification
+#
+# Sends a fully customizable embed to Discord when a LIVE donation arrives.
+# below is yours to edit (no hardcoded footer, branding, or ads).
+#
+# Placeholders usable in any text/url field:
+#   {PLAYER}           - Donor's name
+#   {AMOUNT}           - Raw amount (e.g. 50000)
+#   {AMOUNT_FORMATTED} - Formatted amount (e.g. 50.000)
+#   {MESSAGE}          - Donation message
+#   {METHOD}           - Payment method (QRIS / GoPay / PayPal)
+#   {ID}               - Transaction ID
+#   {DATE}             - Date/time the donation was received
+#   {PLAYER_HEAD}      - URL of the donor's avatar (for icon-url / thumbnail)
+#
+discord:
+  enabled: false
+
+  # One or more Discord webhook URLs. Every listed webhook receives the embed.
+  webhooks:
+    - "https://discord.com/api/webhooks/ID/TOKEN"
+
+  embed:
+    # Color of the embed's left bar, as a hex code. Leave blank to omit.
+    color: "#FFD700"
+
+    # Small line + icon at the very top of the embed.
+    author:
+      icon-url: "{PLAYER_HEAD}"
+      name: "New Donation!"
+
+    # Large bold heading. Leave blank to omit.
+    title: ""
+
+    # Main body text. Supports basic Discord markdown (**bold**, *italic*).
+    description: "**{PLAYER}** just donated **Rp{AMOUNT_FORMATTED}**!"
+
+    # Image shown at the top-right of the embed. Can be {PLAYER_HEAD} or any
+    # image URL. Leave blank to omit.
+    thumbnail: "{PLAYER_HEAD}"
+
+    # Extra key/value rows. Any field whose value resolves to empty is hidden,
+    # so e.g. the Message row disappears automatically when no message is given.
+    fields:
+      - name: "Amount"
+        value: "Rp{AMOUNT_FORMATTED}"
+        inline: true
+      - name: "Method"
+        value: "{METHOD}"
+        inline: true
+      - name: "Message"
+        value: "{MESSAGE}"
+        inline: false
+
+    # Small line + icon at the bottom of the embed.
+    footer:
+      icon-url: "https://imgur.com/tnfqsHW"
+      text: "plsDonate"
+
+    # Show the donation time at the bottom of the embed.
+    timestamp: true
 
 # Advanced SMTP Email System (Used to send clickable payment links to Bedrock players)
 email:
@@ -136,3 +183,17 @@ sound-effects:
   donation-received:
     - "minecraft:entity.player.levelup,1,1"
     - "minecraft:entity.experience_orb.pickup,1,1"
+
+# Bedrock Support (Requires GeyserMC and Floodgate on your server)
+bedrock-support: false
+
+# Global Number Formatting
+format:
+  # The locale used for number formatting.
+  # This determines the decimal and thousand separators.
+  # Common Locales by Format:
+  # - id-ID 1.000.000 (Indonesian)
+  # - en-US 1,000,000 (US English)
+  # - fr-FR 1 000 000 (French)
+  # - de-CH 1'000'000 (Swiss German)
+  locale: "id-ID"

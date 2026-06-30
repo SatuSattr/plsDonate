@@ -210,7 +210,7 @@ public class TransactionRepository {
         }
     }
 
-    private TransactionRecord mapResultSetToRecord(ResultSet rs) throws SQLException {
+    private static TransactionRecord mapResultSetToRecord(ResultSet rs) throws SQLException {
         return new TransactionRecord(
                 rs.getInt("id"),
                 rs.getString("tx_id"),
@@ -278,6 +278,58 @@ public class TransactionRepository {
             }
         } catch (SQLException e) {
             plugin.getLogger().severe("Failed to get player rank: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /** Paginated donation history for a single player. Excludes sandbox and only shows
+     *  payable states (COMPLETED + PENDING); VOID is hidden. Most recent first. */
+    public List<TransactionRecord> getPlayerHistory(String playerName, int limit, int offset) {
+        try (Connection conn = databaseManager.getConnection()) {
+            return queryPlayerHistory(conn, playerName, limit, offset);
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to fetch player history: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    public int getPlayerHistoryCount(String playerName) {
+        try (Connection conn = databaseManager.getConnection()) {
+            return queryPlayerHistoryCount(conn, playerName);
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to count player history: " + e.getMessage());
+            return 0;
+        }
+    }
+
+    static List<TransactionRecord> queryPlayerHistory(Connection conn, String playerName, int limit, int offset) throws SQLException {
+        List<TransactionRecord> records = new ArrayList<>();
+        String sql = "SELECT * FROM transactions " +
+                "WHERE donor_name = ? COLLATE NOCASE AND is_sandbox = 0 " +
+                "AND status IN ('COMPLETED', 'PENDING') " +
+                "ORDER BY timestamp DESC LIMIT ? OFFSET ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, playerName);
+            ps.setInt(2, limit);
+            ps.setInt(3, offset);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    records.add(mapResultSetToRecord(rs));
+                }
+            }
+        }
+        return records;
+    }
+
+    static int queryPlayerHistoryCount(Connection conn, String playerName) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM transactions " +
+                "WHERE donor_name = ? COLLATE NOCASE AND is_sandbox = 0 " +
+                "AND status IN ('COMPLETED', 'PENDING')";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, playerName);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
         }
         return 0;
     }

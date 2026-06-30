@@ -21,11 +21,17 @@ mvn test -Dtest=ExpressionEvaluatorTest                           # one class
 mvn test -Dtest=ExpressionEvaluatorTest#divisionByZeroIsRejected  # one method
 ```
 
-Tests live in `src/test/java`. `TransactionRepositoryClaimTest` runs the real ledger queries against a temporary on-disk SQLite database instead of mocking, so it exercises the actual atomic-claim SQL.
+Tests live in `src/test/java`. Integration tests that touch real SQL:
+- `TransactionRepositoryClaimTest` — atomic-claim SQL against a temporary on-disk SQLite database
+- `TransactionRepositoryHistoryTest` — per-player history queries (sandbox/VOID exclusion, case-insensitive name match, pagination)
+
+Unit tests with no Bukkit dependency:
+- `DiscordManagerTest` — payload builder: placeholder resolution, JSON injection containment, URL percent-encoding
+- `MessageUtilsTest` — `friendlyMethod`, `formatStatus`, `formatType` helpers with and without a lang config
 
 ## What This Is & The Problem It Solves
 
-A Bukkit/Paper Minecraft plugin (Java 21, Paper 1.21 API) that integrates with the Tako.id donation platform. 
+A Bukkit/Paper Minecraft plugin (Java 21, Paper 1.21 API) that integrates with the Tako.id donation platform.
 
 **Context:** Indonesian server owners face high costs for external webstores and difficulty obtaining business licenses for local payment gateways. Furthermore, external webstores cause issues with cross-play (Bedrock players with prefix names like `.Ryan` often typo their names, missing rewards).
 **Solution:** This plugin allows players to run `/donate` in-game, hitting the Tako.id API. The exact player name is locked in the payment link. When payment completes, Tako.id sends a webhook back to the plugin's embedded HTTP server, which instantly fulfills rewards natively in-game.
@@ -41,17 +47,18 @@ WebhookManager (embedded HTTP server) ← Tako.id webhook callback
          ↓
 TransactionRepository (replay-attack check + mark used)
          ↓
-DonationService → [broadcast notification, run triggers, save to DB, send email]
+DonationService → [broadcast notification, run triggers, save to DB, send email, Discord webhook]
 ```
 
 **Key classes:**
 
 - `PlsDonate.java` — main plugin class; initializes all subsystems in `onEnable()`, owns all manager instances
-- `DonationService.java` — orchestrates fulfillment: DB persistence, notifications, trigger execution, email
+- `DonationService.java` — orchestrates fulfillment: DB persistence, notifications, trigger execution, email, Discord
+- `DiscordManager.java` — sends a fully customizable embed to one or more Discord webhook URLs on live donation fulfillment; `buildPayload()` is `static` and tested directly. Text fields go through Gson (injection-safe); URL fields percent-encode all player-derived values. `sendTest()` bypasses `discord.enabled` for admin verification.
 - `WebhookManager.java` — `com.sun.net.httpserver` HTTP server; validates HMAC signatures, delegates to `DonationService`
 - `TakoPlatform.java` — implements `DonationPlatform`; handles Tako.id API calls and HMAC signing
 - `TriggersManager.java` — parses `triggers.yml`; evaluates conditions and executes commands; queues commands for offline players via `OfflineTriggerRepository`
-- `TransactionRepository.java` — SQLite CRUD for the `transactions` table; marks transactions as used after fulfillment
+- `TransactionRepository.java` — SQLite CRUD for the `transactions` table; marks transactions as used after fulfillment; exposes paginated per-player history queries
 - `DatabaseManager.java` — HikariCP SQLite pool; owns table schema creation
 
 **Platform abstraction:** `DonationPlatform` interface lets alternative payment backends be swapped in. Currently only `TakoPlatform` implements it.
@@ -64,9 +71,9 @@ DonationService → [broadcast notification, run triggers, save to DB, send emai
 
 Three user-facing config files, auto-created from `src/main/resources/` defaults on first run:
 
-- `config.yml` — API key, webhook port/path, SMTP credentials, feature toggles
+- `config.yml` — API key, webhook port/path, SMTP credentials, Discord webhook URLs + embed layout, feature toggles, number format locale
 - `triggers.yml` — conditional reward rules: `if amount >= X` → run commands (supports `{player}`, `{amount}`, `{message}` placeholders, and math effects)
-- `lang/en-US.yml` — all player-facing strings; placeholders documented inline. Fully translatable.
+- `lang/en-US.yml` — all player-facing strings; placeholders documented inline. Fully translatable. Includes display-indicator keys (`status-*`, `type-*`, `method-*`, `value-*`) so labels and colours can be localised without touching Java.
 
 `ConfigUpdater` (shaded to `click.sattr.plsDonate.libs.configupdater`) merges new config keys into existing files on plugin reload without overwriting user values.
 
@@ -77,3 +84,5 @@ Three user-facing config files, auto-created from `src/main/resources/` defaults
 - **Offline triggers:** Commands for offline players are stored in the `offline_triggers` SQLite table and executed on `PlayerJoinEvent` via `OfflineTriggerRepository`.
 - **Sanitization:** Player names and donation messages are run through `sanitize()` before being substituted into commands — don't bypass this.
 - **Async database calls:** All DB operations run off the main thread; results that touch Bukkit API are dispatched back via `Bukkit.getScheduler().runTask()`.
+- **Display indicators are in the lang file:** Status labels (`COMPLETED` / `PENDING` / `VOID`), type labels (`LIVE` / `SANDBOX`), method labels (`QRIS` / `GoPay` / `PayPal`), and fallback strings (`value-none`, `value-empty`, etc.) all resolve through `MessageUtils.formatStatus()` / `formatType()` / `friendlyMethod()`. The raw DB values are unchanged — these helpers only affect display. Don't hardcode colour codes or labels in command handlers; call the helpers instead.
+- **Discord injection surfaces are separated:** `DiscordManager` handles two surfaces differently — text fields (title, description, fields, footer) go through `JsonObject.addProperty()` so donor text is always escaped data; URL fields (thumbnail, author/footer icon) use `URLEncoder` per-value before substitution so a crafted player name can't inject a new host or query param. `{PLAYER_HEAD}` is pre-encoded and substituted verbatim to avoid double-encoding.

@@ -26,6 +26,8 @@ public final class Constants {
     public static final String PERM_DONATE_REQUEST = "plsdonate.donate.request";
     public static final String PERM_DONATE_TOP = "plsdonate.donate.top";
     public static final String PERM_DONATE_MILESTONE = "plsdonate.donate.milestone";
+    public static final String PERM_DONATE_HISTORY = "plsdonate.donate.history";
+    public static final String PERM_DONATE_HISTORY_OTHERS = "plsdonate.donate.history.others";
     public static final String PERM_DONATE_HELP = "plsdonate.donate.help";
     public static final String PERM_DONATE_BYPASS_COOLDOWN = "plsdonate.donate.bypasscooldown";
 
@@ -34,6 +36,7 @@ public final class Constants {
     public static final String PERM_ADMIN_TRANSACTION = "plsdonate.admin.transaction";
     public static final String PERM_ADMIN_FAKEDONATE = "plsdonate.admin.fakedonate";
     public static final String PERM_ADMIN_PUSHDONATE = "plsdonate.admin.pushdonate";
+    public static final String PERM_ADMIN_TESTDISCORD = "plsdonate.admin.testdiscord";
     public static final String PERM_ADMIN_RELOAD = "plsdonate.admin.reload";
 
     // Configuration Paths

@@ -1,6 +1,7 @@
 package click.sattr.plsDonate.manager;
 
 import click.sattr.plsDonate.PlsDonate;
+import click.sattr.plsDonate.util.MessageUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 
@@ -129,9 +130,7 @@ public class EmailManager {
 
         // Load and format HTML from classpath resource (bundled in JAR)
         String htmlContent = loadTemplate();
-        String methodDisplay = method.equalsIgnoreCase("gopay") ? "GoPay" : 
-                               method.equalsIgnoreCase("paypal") ? "PayPal" : 
-                               method.toUpperCase(); // default for QRIS or others
+        String methodDisplay = MessageUtils.friendlyMethod(plugin.getLangConfig(), method);
 
         htmlContent = htmlContent.replace("{PLAYER}", player)
                                  .replace("{PLAYER_UPPERCASED}", player.toUpperCase())

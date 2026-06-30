@@ -6,6 +6,10 @@ no-permission: "<red>You don't have permission to do this!"
 invalid-usage: "{PREFIX} <red>Invalid usage. <reset>try to run <yellow>/{COMMAND} help<reset> for help"
 
 reload-success: "{PREFIX} <white>Configuration reloaded <green>successfully!"
+# Shown by /pdn testdiscord. {COUNT} = number of webhooks the test was dispatched to.
+discord-test-sent: "{PREFIX} <green>Test embed dispatched to <yellow>{COUNT}<green> webhook(s). If nothing appears, check the console for errors."
+discord-test-no-webhooks: "{PREFIX} <red>No valid webhooks set in <yellow>discord.webhooks<red>."
+discord-test-unavailable: "{PREFIX} <red>Discord notifications are not available."
 cooldown-error: "{PREFIX} <white>Sorry, you're still in <yellow>{TIME}s <white>cooldown"
 general-error: "{PREFIX} <red>Something wrong with the donation system! please contact admin"
 min-donation-error: "{PREFIX} <white>Sorry, <red>minimum <white>amount of donation is <yellow>Rp{AMOUNT_FORMATTED}"
@@ -84,6 +88,10 @@ donation-help:
   - "      <gray>- <#fafafa>paypal <dark_gray>(min 50k)"
   - "    <gray>Example » <#fafafa>/donate 10000 hello@gmail.com qris Thanks!"
   - " "
+  - "    <gold>/donate history <gray>» <#fafafa>View your donation history"
+  - "    <gold>/donate top <gray>» <#fafafa>View the donation leaderboard"
+  - "    <gold>/donate milestone <gray>» <#fafafa>View the donation goal"
+  - " "
   - "<gray><st>                                                       "
 
 # General / System Messages
@@ -114,6 +122,49 @@ milestone-progress: "  <white>Progress: <green>Rp{CURRENT_FORMATTED} <gray>/ <re
 milestone-percentage: "  <white>Percentage: <aqua>{PERCENT}%"
 milestone-footer: "<br><gray><st>                                              "
 milestone-disabled: "{PREFIX} <red>Milestone feature is currently disabled in config.yml."
+
+# Player donation history (/donate history [player] [page])
+# Available Placeholders: {PREFIX}, {NAME}, {PAGE}, {TOTAL_PAGES}, {TOTAL_FORMATTED}, {RANK}, {DATE}, {AMOUNT_FORMATTED}, {STATUS_COLORED}
+history-header:
+  <gray><st>          <reset> <green>plsDonate <aqua><u>Your History</u> <gray>(Page {PAGE}/{TOTAL_PAGES})
+  <gray><st>          <br>
+# Shown instead of history-header when an admin views someone else's history
+history-header-other:
+  <gray><st>          <reset> <green>plsDonate <aqua><u>{NAME}'s History</u> <gray>(Page {PAGE}/{TOTAL_PAGES})
+  <gray><st>          <br>
+history-summary: "  <white>Total: <green>Rp{TOTAL_FORMATTED} <gray>| <white>Rank: <yellow>{RANK}"
+history-format: "<gray>{DATE} <gray>- <green>Rp{AMOUNT_FORMATTED} <gray>- {STATUS_COLORED}"
+history-empty: "{PREFIX} <gray>No donation records found."
+history-footer: "<br><gray><st>                                                    "
+history-next-hover: "<gray>Click to view page {NEXT_PAGE}"
+
+# ----------------------------------------------------------------------- #
+#                         DISPLAY INDICATORS                              #
+# ----------------------------------------------------------------------- #
+# These customize how internal values are SHOWN to players. They change the
+# display only — the underlying database values and trigger conditions are
+# unaffected (e.g. a trigger condition like "{method} == 'QRIS'" still uses
+# the raw method, not the label below). MiniMessage colours are supported.
+
+# Transaction status, as shown in /pdn transaction list/info and /donate history
+status-completed: "<green>COMPLETED"
+status-pending: "<yellow>PENDING"
+status-void: "<red>VOID"
+
+# Transaction type, as shown in /pdn transaction info
+type-sandbox: "<red>SANDBOX"
+type-live: "<green>LIVE"
+
+# Payment method labels (display only; raw method is kept for trigger conditions)
+method-qris: "QRIS"
+method-gopay: "GoPay"
+method-paypal: "PayPal"
+
+# Fallback values shown when data is missing
+value-no-message: "No message"      # donation has no attached message
+value-none: "None"                  # %plsdonate_recent_*% with no donations yet
+value-empty: "N/A"                  # %plsdonate_top_*% slot beyond the last donor
+value-unranked: "Unranked"          # player has no leaderboard rank yet
 
 # Transaction Management Messages
 # Available Placeholders (General): {PREFIX}

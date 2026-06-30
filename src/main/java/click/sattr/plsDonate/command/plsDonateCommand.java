@@ -59,6 +59,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn transaction <gray>- Manage transactions", p));
                 sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn fakedonate <amount> <email> <method> [msg] <gray>- Simulate a sandbox donation (Hidden from stats)", p));
                 sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn pushdonate <amount> <email> <method> [msg] <gray>- Simulate a real donation (Included in stats)", p));
+                sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn testdiscord <gray>- Send a test Discord webhook embed", p));
                 sender.sendMessage(MessageUtils.parseMessage("    <yellow>/pdn reload <gray>- Reload configuration", p));
             }
             sender.sendMessage(MessageUtils.parseMessage("<newline><gray>----------------------------", p));
@@ -362,6 +363,35 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
         }
 
 
+        if (args[0].equalsIgnoreCase("testdiscord")) {
+            if (!sender.hasPermission(Constants.PERM_ADMIN_TESTDISCORD)) {
+                MessageUtils.sendLangMessage(sender, plugin, "no-permission", null);
+                return true;
+            }
+
+            Map<String, String> p = new HashMap<>();
+            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+
+            if (plugin.getDiscordManager() == null) {
+                sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("discord-test-unavailable", "{PREFIX} <red>Discord notifications are not available."), p));
+                return true;
+            }
+
+            // Use the sender's own name when a player runs it (so {PLAYER_HEAD} shows their head);
+            // fall back to a sample name for console. The test bypasses 'discord.enabled' on purpose
+            // so admins can verify their webhook + layout before flipping the feature live.
+            String testName = (sender instanceof Player player) ? player.getName() : "Notch";
+            int sent = plugin.getDiscordManager().sendTest(testName);
+
+            if (sent == 0) {
+                sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("discord-test-no-webhooks", "{PREFIX} <red>No valid webhooks set in <yellow>discord.webhooks<red>."), p));
+            } else {
+                p.put("{COUNT}", String.valueOf(sent));
+                sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("discord-test-sent", "{PREFIX} <green>Test embed dispatched to <yellow>{COUNT}<green> webhook(s). If nothing appears, check the console for errors."), p));
+            }
+            return true;
+        }
+
         if (args[0].equalsIgnoreCase("reload")) {
             if (!sender.hasPermission(Constants.PERM_ADMIN_RELOAD)) {
                 MessageUtils.sendLangMessage(sender, plugin, "no-permission", null);
@@ -396,12 +426,11 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-list-empty", "<gray>No transactions found."), p));
         } else {
             for (TransactionRepository.TransactionRecord record : records) {
-                String color = record.status().equalsIgnoreCase("COMPLETED") ? "<green>" : (record.status().equalsIgnoreCase("PENDING") ? "<yellow>" : "<red>");
                 Map<String, String> rp = new HashMap<>(p);
                 rp.put(Constants.ID, String.valueOf(record.id()));
                 rp.put("{NAME}", record.donorName());
                 rp.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatAmount(plugin, record.amount()));
-                rp.put("{STATUS_COLORED}", color + record.status());
+                rp.put("{STATUS_COLORED}", MessageUtils.formatStatus(plugin.getLangConfig(), record.status()));
                 
                 sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("transaction-list-format", "<gray>#{ID} | {NAME} | Rp{AMOUNT_FORMATTED} | {STATUS_COLORED}"), rp));
             }
@@ -433,8 +462,8 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
         p.put("{TX_ID}", r.txId());
         p.put("{NAME}", r.donorName());
         p.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatAmount(plugin, r.amount()));
-        p.put("{STATUS_COLORED}", (r.status().equalsIgnoreCase("COMPLETED") ? "<green>" : "<yellow>") + r.status());
-        p.put("{TYPE_COLORED}", (r.isSandbox() ? "<red>SANDBOX" : "<green>LIVE"));
+        p.put("{STATUS_COLORED}", MessageUtils.formatStatus(plugin.getLangConfig(), r.status()));
+        p.put("{TYPE_COLORED}", MessageUtils.formatType(plugin.getLangConfig(), r.isSandbox()));
         p.put("{DATE}", formatDate(r.timestamp()));
         p.put("{COMPLETED_AT}", r.completedAt() > 0 ? formatDate(r.completedAt()) : "-");
         p.put("{CHECKSUM}", r.checksum());
@@ -512,6 +541,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             String sub = args[0].toLowerCase();
             if ("fakedonate".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN_FAKEDONATE)) completions.add("fakedonate");
             if ("pushdonate".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN_PUSHDONATE)) completions.add("pushdonate");
+            if ("testdiscord".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN_TESTDISCORD)) completions.add("testdiscord");
             if ("reload".startsWith(sub) && sender.hasPermission(Constants.PERM_ADMIN_RELOAD)) completions.add("reload");
             if ("leaderboard".startsWith(sub) && sender.hasPermission(Constants.PERM_DONATE_TOP)) completions.add("leaderboard");
             if ("top".startsWith(sub) && sender.hasPermission(Constants.PERM_DONATE_TOP)) completions.add("top");

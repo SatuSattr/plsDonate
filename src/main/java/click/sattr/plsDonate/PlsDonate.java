@@ -6,6 +6,7 @@ import click.sattr.plsDonate.database.DatabaseManager;
 import click.sattr.plsDonate.database.repository.OfflineTriggerRepository;
 import click.sattr.plsDonate.database.repository.TransactionRepository;
 import click.sattr.plsDonate.manager.BedrockFormHandler;
+import click.sattr.plsDonate.manager.DiscordManager;
 import click.sattr.plsDonate.manager.DonationService;
 import click.sattr.plsDonate.manager.EmailManager;
 import click.sattr.plsDonate.manager.StatsManager;
@@ -49,6 +50,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
     private EmailManager emailManager;
     private DonationService donationService;
     private StatsManager statsManager;
+    private DiscordManager discordManager;
     private BedrockFormHandler bedrockFormHandler;
     private DonateCommand donateCommand;
     private plsDonateCommand pdnCommand;
@@ -64,6 +66,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
     public EmailManager getEmailManager() { return emailManager; }
     public DonationService getDonationService() { return donationService; }
     public StatsManager getStatsManager() { return statsManager; }
+    public DiscordManager getDiscordManager() { return discordManager; }
     public BedrockFormHandler getBedrockFormHandler() { return bedrockFormHandler; }
     
     @Override
@@ -109,6 +112,10 @@ public final class PlsDonate extends JavaPlugin implements Listener {
 
         // Initialize Donation Service
         donationService = new DonationService(this);
+
+        // Initialize Discord webhook notifications. Reads config per-request, so it is
+        // created once here and never recreated on reload (avoids leaking HttpClient pools).
+        discordManager = new DiscordManager(this);
 
         // Initialize stats cache (leaderboard + milestone) and warm it from the DB
         statsManager = new StatsManager(this);

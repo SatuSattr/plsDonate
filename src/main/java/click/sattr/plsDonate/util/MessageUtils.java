@@ -5,6 +5,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
 import java.text.NumberFormat;
@@ -115,18 +116,13 @@ public final class MessageUtils {
         p.put(Constants.AMOUNT_FORMATTED, formatAmount(plugin, amount));
         p.put(Constants.EMAIL, email != null ? email : "");
         
-        String msg = (message == null || message.isEmpty()) ? "No message" : message;
+        String msg = (message == null || message.isEmpty()) ? plugin.getLangConfig().getString("value-no-message", "No message") : message;
         p.put(Constants.MESSAGE, msg);
         p.put("{MESSAGE_LOWERCASED}", msg.toLowerCase());
         p.put("{MESSAGE_UPPERCASED}", msg.toUpperCase());
 
-        String baseLabel = "QRIS";
-        String colorCode = "#ED1A3D";
-        if (method != null) {
-            String m = method.toLowerCase();
-            if (m.equals("gopay")) { baseLabel = "GoPay"; colorCode = "#01AED6"; }
-            else if (m.equals("paypal")) { baseLabel = "PayPal"; colorCode = "#195ef7"; }
-        }
+        String baseLabel = friendlyMethod(plugin.getLangConfig(), method);
+        String colorCode = methodColor(method);
 
         p.put(Constants.METHOD, baseLabel);
         p.put("{METHOD_LOWERCASED}", baseLabel.toLowerCase());
@@ -139,7 +135,54 @@ public final class MessageUtils {
         p.put("{METHOD_COLORED}", colored);
         p.put("{METHOD_COLORED_LOWERCASED}", coloredLower);
         p.put("{METHOD_COLORED_UPPERCASED}", coloredUpper);
-        
+
         return p;
+    }
+
+    /** Maps a raw payment method to its display label. Reads custom labels from the lang file
+     *  (method-qris / method-gopay / method-paypal); unknown/null methods default to the QRIS label. */
+    public static String friendlyMethod(FileConfiguration lang, String method) {
+        String key = method == null ? "qris" : switch (method.toLowerCase()) {
+            case "gopay" -> "gopay";
+            case "paypal" -> "paypal";
+            default -> "qris";
+        };
+        String def = switch (key) {
+            case "gopay" -> "GoPay";
+            case "paypal" -> "PayPal";
+            default -> "QRIS";
+        };
+        return lang == null ? def : lang.getString("method-" + key, def);
+    }
+
+    /** Renders a transaction status with its configured colour+label. Known statuses read from
+     *  status-completed / status-pending / status-void; unknown statuses pass through unchanged. */
+    public static String formatStatus(FileConfiguration lang, String status) {
+        if (status == null) return "";
+        String key;
+        String def;
+        switch (status.toLowerCase()) {
+            case "completed" -> { key = "status-completed"; def = "<green>COMPLETED"; }
+            case "pending" -> { key = "status-pending"; def = "<yellow>PENDING"; }
+            case "void" -> { key = "status-void"; def = "<red>VOID"; }
+            default -> { return status; }
+        }
+        return lang == null ? def : lang.getString(key, def);
+    }
+
+    /** Renders the LIVE/SANDBOX type indicator from type-sandbox / type-live. */
+    public static String formatType(FileConfiguration lang, boolean sandbox) {
+        String key = sandbox ? "type-sandbox" : "type-live";
+        String def = sandbox ? "<red>SANDBOX" : "<green>LIVE";
+        return lang == null ? def : lang.getString(key, def);
+    }
+
+    private static String methodColor(String method) {
+        if (method == null) return "#ED1A3D";
+        return switch (method.toLowerCase()) {
+            case "gopay" -> "#01AED6";
+            case "paypal" -> "#195ef7";
+            default -> "#ED1A3D";
+        };
     }
 }

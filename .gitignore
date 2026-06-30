@@ -15,5 +15,6 @@ Thumbs.db
 
 # Agent/Skills files
 .agents/
+.claude/
 skills-lock.json
 .gemini/

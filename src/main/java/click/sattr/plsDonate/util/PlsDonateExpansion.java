@@ -75,7 +75,7 @@ public class PlsDonateExpansion extends PlaceholderExpansion {
                     return MessageUtils.formatAmount(plugin, total);
                 case "player_rank":
                     int rank = plugin.getTransactionRepository().getPlayerRank(player.getName());
-                    return rank > 0 ? "#" + rank : "N/A";
+                    return rank > 0 ? "#" + rank : plugin.getLangConfig().getString("value-unranked", "Unranked");
             }
         }
 
@@ -88,7 +88,7 @@ public class PlsDonateExpansion extends PlaceholderExpansion {
                 int rank = Integer.parseInt(parts[parts.length - 1]);
                 List<TransactionRepository.LeaderboardEntry> leaderboard = plugin.getTransactionRepository().getLeaderboard(rank);
                 
-                if (leaderboard.size() < rank) return "N/A";
+                if (leaderboard.size() < rank) return plugin.getLangConfig().getString("value-empty", "N/A");
                 TransactionRepository.LeaderboardEntry entry = leaderboard.get(rank - 1);
 
                 if (params.startsWith("top_name_")) return entry.name();
@@ -103,7 +103,7 @@ public class PlsDonateExpansion extends PlaceholderExpansion {
         // 4. Recent Donation
         if (params.startsWith("recent_")) {
             TransactionRepository.LeaderboardEntry recent = plugin.getTransactionRepository().getRecentDonation();
-            if (recent == null) return "None";
+            if (recent == null) return plugin.getLangConfig().getString("value-none", "None");
 
             switch (params) {
                 case "recent_name":
