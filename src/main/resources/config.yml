@@ -76,7 +76,7 @@ triggers:
 #   {METHOD}           - Payment method (QRIS / GoPay / PayPal)
 #   {ID}               - Transaction ID
 #   {DATE}             - Date/time the donation was received
-#   {PLAYER_HEAD}      - URL of the donor's avatar (for icon-url / thumbnail)
+#   {PLAYER_HEAD}      - URL of the donor's avatar (for icon-url / thumbnail / image)
 #
 discord:
   enabled: false
@@ -100,9 +100,14 @@ discord:
     # Main body text. Supports basic Discord markdown (**bold**, *italic*).
     description: "**{PLAYER}** just donated **Rp{AMOUNT_FORMATTED}**!"
 
-    # Image shown at the top-right of the embed. Can be {PLAYER_HEAD} or any
-    # image URL. Leave blank to omit.
+    # Small image shown at the top-right of the embed. Can be {PLAYER_HEAD} or
+    # any image URL. Leave blank to omit.
     thumbnail: "{PLAYER_HEAD}"
+
+    # Large full-width image shown at the bottom of the embed (above the footer).
+    # Good for a banner or donation artwork. Can be {PLAYER_HEAD} or any image URL.
+    # Leave blank to omit.
+    image: ""
 
     # Extra key/value rows. Any field whose value resolves to empty is hidden,
     # so e.g. the Message row disappears automatically when no message is given.
@@ -122,8 +127,8 @@ discord:
       icon-url: "https://imgur.com/tnfqsHW"
       text: "plsDonate"
 
-    # Show the donation time at the bottom of the embed.
-    timestamp: true
+      # Show the donation time at the bottom of the embed.
+      timestamp: true
 
 # Advanced SMTP Email System (Used to send clickable payment links to Bedrock players)
 email:

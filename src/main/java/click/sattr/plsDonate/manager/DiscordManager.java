@@ -26,7 +26,7 @@ import java.util.Map;
  * <p>Two distinct injection surfaces are handled separately. Text fields (title, description,
  * fields, footer) are emitted through Gson's {@link JsonObject}, so any quotes or braces a donor
  * types survive as escaped DATA and can never break out into new JSON keys. URL fields (thumbnail,
- * author/footer icon) percent-encode every player-derived value before substitution, so a donor who
+ * image, author/footer icon) percent-encode every player-derived value before substitution, so a donor who
  * renames themselves into something like {@code x/../?to=evil} can only fill a single path segment —
  * they cannot inject a new host or scheme. {@code {PLAYER_HEAD}} is pre-encoded and substituted
  * verbatim so it is never double-encoded.
@@ -49,7 +49,7 @@ public class DiscordManager {
     public record EmbedField(String name, String value, boolean inline) {}
 
     public record EmbedSpec(String color, String authorName, String authorIconUrl, String title,
-                            String description, String thumbnail, List<EmbedField> fields,
+                            String description, String thumbnail, String image, List<EmbedField> fields,
                             String footerText, String footerIconUrl, boolean timestamp) {}
 
     private record Ctx(String headUrl, String player, String message, String amount,
@@ -113,10 +113,11 @@ public class DiscordManager {
                 c.getString(EMBED_BASE + "title", ""),
                 c.getString(EMBED_BASE + "description", ""),
                 c.getString(EMBED_BASE + "thumbnail", ""),
+                c.getString(EMBED_BASE + "image", ""),
                 fields,
                 c.getString(EMBED_BASE + "footer.text", ""),
                 c.getString(EMBED_BASE + "footer.icon-url", ""),
-                c.getBoolean(EMBED_BASE + "timestamp", true));
+                c.getBoolean(EMBED_BASE + "footer.timestamp", true));
     }
 
     public static String buildPayload(EmbedSpec spec, String player, String message, String amount,
@@ -149,6 +150,13 @@ public class DiscordManager {
             JsonObject t = new JsonObject();
             t.addProperty("url", thumb);
             embed.add("thumbnail", t);
+        }
+
+        String image = resolveUrl(spec.image(), c);
+        if (isHttpUrl(image)) {
+            JsonObject img = new JsonObject();
+            img.addProperty("url", image);
+            embed.add("image", img);
         }
 
         JsonArray fieldsArr = new JsonArray();

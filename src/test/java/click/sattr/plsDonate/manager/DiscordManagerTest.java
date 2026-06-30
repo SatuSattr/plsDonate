@@ -24,7 +24,7 @@ class DiscordManagerTest {
     @Test
     void happyPathResolvesPlaceholdersAndStructure() {
         EmbedSpec spec = new EmbedSpec("#FFD700", "New Donation!", "{PLAYER_HEAD}", "",
-                "**{PLAYER}** donated Rp{AMOUNT_FORMATTED}", "{PLAYER_HEAD}",
+                "**{PLAYER}** donated Rp{AMOUNT_FORMATTED}", "{PLAYER_HEAD}", "",
                 List.of(), "plsDonate", "", true);
 
         String json = DiscordManager.buildPayload(spec, "Notch", "", "50000", "50.000",
@@ -47,7 +47,7 @@ class DiscordManagerTest {
     @Test
     void jsonInjectionInPlayerNameIsContained() {
         String evil = "\",\"description\":\"HACKED";
-        EmbedSpec spec = new EmbedSpec("", "", "", "", "**{PLAYER}**", "",
+        EmbedSpec spec = new EmbedSpec("", "", "", "", "**{PLAYER}**", "", "",
                 List.of(), "", "", false);
 
         String json = DiscordManager.buildPayload(spec, evil, "", "0", "0", "QRIS", "T", "d", TS);
@@ -65,7 +65,7 @@ class DiscordManagerTest {
 
     @Test
     void playerValueInUrlFieldIsPercentEncoded() {
-        EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "https://skin.example/{PLAYER}",
+        EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "https://skin.example/{PLAYER}", "",
                 List.of(), "", "", false);
 
         String json = DiscordManager.buildPayload(spec, "evil/../x?a=b", "", "0", "0", "QRIS", "T", "d", TS);
@@ -75,8 +75,21 @@ class DiscordManagerTest {
     }
 
     @Test
+    void imageFieldRendersAndPercentEncodesPlayerValue() {
+        EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "", "https://banner.example/{PLAYER}",
+                List.of(), "", "", false);
+
+        String json = DiscordManager.buildPayload(spec, "evil/../x?a=b", "", "0", "0", "QRIS", "T", "d", TS);
+
+        // image is a separate field from thumbnail and gets the same URL-encoding protection
+        assertEquals("https://banner.example/evil%2F..%2Fx%3Fa%3Db",
+                embedOf(json).getAsJsonObject("image").get("url").getAsString());
+        assertFalse(embedOf(json).has("thumbnail"), "blank thumbnail stays omitted");
+    }
+
+    @Test
     void playerHeadUrlIsNotDoubleEncoded() {
-        EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "{PLAYER_HEAD}",
+        EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "{PLAYER_HEAD}", "",
                 List.of(), "", "", false);
 
         String json = DiscordManager.buildPayload(spec, "foo bar", "", "0", "0", "QRIS", "T", "d", TS);
@@ -91,7 +104,7 @@ class DiscordManagerTest {
         List<EmbedField> fields = List.of(
                 new EmbedField("Amount", "Rp{AMOUNT_FORMATTED}", true),
                 new EmbedField("Message", "{MESSAGE}", false));
-        EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "", fields, "", "", false);
+        EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "", "", fields, "", "", false);
 
         String emptyMsg = DiscordManager.buildPayload(spec, "Notch", "", "0", "50.000", "QRIS", "T", "d", TS);
         assertEquals(1, embedOf(emptyMsg).getAsJsonArray("fields").size());
@@ -103,7 +116,7 @@ class DiscordManagerTest {
 
     @Test
     void nonUrlIconValueIsOmitted() {
-        EmbedSpec spec = new EmbedSpec("", "Author", "{MESSAGE}", "", "x", "",
+        EmbedSpec spec = new EmbedSpec("", "Author", "{MESSAGE}", "", "x", "", "",
                 List.of(), "", "", false);
 
         // plain text message -> not a URL -> icon omitted, author kept
@@ -119,14 +132,14 @@ class DiscordManagerTest {
 
     @Test
     void invalidColorIsOmitted() {
-        EmbedSpec spec = new EmbedSpec("notacolor", "", "", "", "x", "", List.of(), "", "", false);
+        EmbedSpec spec = new EmbedSpec("notacolor", "", "", "", "x", "", "", List.of(), "", "", false);
         String json = DiscordManager.buildPayload(spec, "Notch", "", "0", "0", "QRIS", "T", "d", TS);
         assertFalse(embedOf(json).has("color"));
     }
 
     @Test
     void timestampDisabledIsOmitted() {
-        EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "", List.of(), "", "", false);
+        EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "", "", List.of(), "", "", false);
         String json = DiscordManager.buildPayload(spec, "Notch", "", "0", "0", "QRIS", "T", "d", TS);
         assertFalse(embedOf(json).has("timestamp"));
     }
