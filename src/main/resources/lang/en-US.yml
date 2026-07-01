@@ -161,10 +161,10 @@ method-gopay: "GoPay"
 method-paypal: "PayPal"
 
 # Fallback values shown when data is missing
-value-no-message: "No message"      # donation has no attached message
-value-none: "None"                  # %plsdonate_recent_*% with no donations yet
-value-empty: "N/A"                  # %plsdonate_top_*% slot beyond the last donor
-value-unranked: "Unranked"          # player has no leaderboard rank yet
+value-no-message: "No message" # donation has no attached message
+value-none: "None" # %plsdonate_recent_*% with no donations yet
+value-empty: "N/A" # %plsdonate_top_*% slot beyond the last donor
+value-unranked: "Unranked" # player has no leaderboard rank yet
 
 # Transaction Management Messages
 # Available Placeholders (General): {PREFIX}
@@ -240,17 +240,19 @@ loading-overlay: "{PREFIX} <gray>Fetching data from API... Please wait."
 
 # Bedrock Donation Form
 # Shown when a Bedrock player runs /donate without arguments.
-# Format codes: use & (e.g. &e for yellow, &l for bold).
+# Use MiniMessage tags for colors (e.g. <yellow>, <green>, <bold>).
 donation-form:
-  title: "&lDonation Form"
-  amount-label: "&eAmount"
-  amount-placeholder: "Enter amount..."
-  email-label: "&eEmail"
+  title: "Donation"
+  amount-label: "<white>Amount"
+  amount-placeholder: "e.g 1000, 5000, 25000"
+  email-label: "<white>Email"
   email-placeholder: "your@email.com"
-  method-label: "&ePayment Method"
-  message-label: "&eMessage (optional)"
-  message-placeholder: "Your message..."
+  method-label: "<white>Payment Method"
+  message-label: "<white>Message (optional)"
+  message-placeholder: "e.g Deez Nuts"
   # Override display labels for each payment method (keyed by method id).
-  method-qris: "&aQRIS"
-  method-gopay: "&bGoPay"
-  method-paypal: "&ePayPal"
+  method-qris: "<red>QRIS"
+  method-gopay: "<green>GoPay <gray>- Min 10k"
+  method-paypal: "<aqua>PayPal <gray>- Min 50k"
+# Shown when amount or email field is left empty on form submit.
+donation-form-incomplete: "{PREFIX} <red>Please fill in all required fields before submitting."

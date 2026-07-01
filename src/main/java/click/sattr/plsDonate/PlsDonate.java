@@ -84,7 +84,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         } else {
             // If it exists, update it
             try {
-                ConfigUpdater.update(this, "config.yml", configFile, List.of("email.hosts"));
+                ConfigUpdater.update(this, "config.yml", configFile, Collections.emptyList());
             } catch (IOException e) {
                 getLogger().severe("Could not update config.yml!");
                 e.printStackTrace();
@@ -315,7 +315,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
 
         File configFile = new File(getDataFolder(), "config.yml");
         try {
-            ConfigUpdater.update(this, "config.yml", configFile, List.of("email.hosts"));
+            ConfigUpdater.update(this, "config.yml", configFile, Collections.emptyList());
         } catch (IOException e) {
             getLogger().severe("Could not update config.yml during reload!");
             e.printStackTrace();
