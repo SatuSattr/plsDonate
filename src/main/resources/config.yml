@@ -184,6 +184,41 @@ sound-effects:
     - "minecraft:entity.player.levelup,1,1"
     - "minecraft:entity.experience_orb.pickup,1,1"
 
+# Bedrock Donation Form Configuration
+# Controls the form shown when a Bedrock player runs /donate without arguments.
+#
+# Amount modes:
+#   TEXT     - Player types the amount freely in a text input field.
+#   DROPDOWN - Player selects from a fixed list of predefined amounts.
+#   SLIDER   - Player drags a slider (configure min, max, step below).
+donation-form:
+  amount-mode: TEXT
+
+  # Predefined amounts for DROPDOWN mode.
+  # Must be whole numbers. Values are sorted before display.
+  # Ignored when amount-mode is TEXT or SLIDER.
+  amount-presets: [5000, 10000, 25000, 50000, 100000, 250000, 500000]
+
+  # Settings for SLIDER mode.
+  # Ignored when amount-mode is TEXT or DROPDOWN.
+  amount-slider-min: 1000
+  amount-slider-max: 10000000
+  amount-slider-step: 5000
+  amount-slider-default: 50000
+
+  # Payment methods available in the form dropdown.
+  #   id  - Internal method identifier (must be: qris, gopay, paypal).
+  #   min - Minimum donation amount for this method. Set 0 for no method-specific minimum.
+  # The display label for each method is read from the language file:
+  #   donation-form.method-<id>  (falls back to the id in uppercase if missing)
+  payment-methods:
+    - id: qris
+      min: 5000
+    - id: gopay
+      min: 10000
+    - id: paypal
+      min: 50000
+
 # Bedrock Support (Requires GeyserMC and Floodgate on your server)
 bedrock-support: false
 

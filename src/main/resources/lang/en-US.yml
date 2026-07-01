@@ -237,3 +237,20 @@ transaction-delete-confirmation-bedrock:
   btn-no: "Cancel"
 
 loading-overlay: "{PREFIX} <gray>Fetching data from API... Please wait."
+
+# Bedrock Donation Form
+# Shown when a Bedrock player runs /donate without arguments.
+# Format codes: use & (e.g. &e for yellow, &l for bold).
+donation-form:
+  title: "&lDonation Form"
+  amount-label: "&eAmount"
+  amount-placeholder: "Enter amount..."
+  email-label: "&eEmail"
+  email-placeholder: "your@email.com"
+  method-label: "&ePayment Method"
+  message-label: "&eMessage (optional)"
+  message-placeholder: "Your message..."
+  # Override display labels for each payment method (keyed by method id).
+  method-qris: "&aQRIS"
+  method-gopay: "&bGoPay"
+  method-paypal: "&ePayPal"

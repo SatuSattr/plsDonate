@@ -52,6 +52,36 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        // Bedrock donation form (no args) — opens a form for filling amount, email, method, message
+        if (args.length == 0
+                && plugin.getBedrockFormHandler() != null
+                && plugin.getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false)
+                && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
+
+            if (!player.hasPermission(Constants.PERM_DONATE_REQUEST)) {
+                MessageUtils.sendLangMessage(player, plugin, "no-permission", null);
+                return true;
+            }
+
+            if (!player.hasPermission(Constants.PERM_DONATE_BYPASS_COOLDOWN)) {
+                long lastUsage = cooldowns.getOrDefault(player.getUniqueId(), 0L);
+                int cooldownSeconds = plugin.getConfig().getInt(Constants.CONF_DONATE_COOLDOWN, 10);
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastUsage < (cooldownSeconds * 1000L)) {
+                    long remaining = (cooldownSeconds * 1000L - (currentTime - lastUsage)) / 1000L;
+                    Map<String, String> p = new HashMap<>();
+                    p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    p.put(Constants.TIME, String.valueOf(remaining + 1));
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("cooldown-error", "{PREFIX} <white>Sorry, you're still in <yellow>{TIME}s <white>cooldown"), p));
+                    return true;
+                }
+            }
+
+            cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
+            plugin.getBedrockFormHandler().openDonationForm(player);
+            return true;
+        }
+
         // Help: accept any trailing args so "/donate help foo bar" still shows help
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
             if (!player.hasPermission(Constants.PERM_DONATE_HELP)) {
