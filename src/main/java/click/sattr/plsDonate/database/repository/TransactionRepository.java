@@ -138,7 +138,7 @@ public class TransactionRepository {
 
     public List<TransactionRecord> getTransactions(int limit, int offset) {
         List<TransactionRecord> records = new ArrayList<>();
-        String sql = "SELECT * FROM transactions ORDER BY id DESC LIMIT ? OFFSET ?";
+        String sql = "SELECT * FROM transactions WHERE is_sandbox = 0 ORDER BY id DESC LIMIT ? OFFSET ?";
         try (Connection conn = databaseManager.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, limit);
             ps.setInt(2, offset);
@@ -154,7 +154,7 @@ public class TransactionRepository {
     }
 
     public int getTransactionsCount() {
-        String sql = "SELECT COUNT(*) FROM transactions";
+        String sql = "SELECT COUNT(*) FROM transactions WHERE is_sandbox = 0";
         try (Connection conn = databaseManager.getConnection(); Statement s = conn.createStatement(); ResultSet rs = s.executeQuery(sql)) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {
