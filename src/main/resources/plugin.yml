@@ -19,6 +19,12 @@ permissions:
   plsdonate.donate.milestone:
     description: View the donation milestone
     default: true
+  plsdonate.donate.history:
+    description: View your own donation history
+    default: true
+  plsdonate.donate.history.others:
+    description: View another player's donation history
+    default: op
   plsdonate.donate.help:
     description: View the /donate help message
     default: true
@@ -36,6 +42,9 @@ permissions:
     default: op
   plsdonate.admin.pushdonate:
     description: Simulate a real donation
+    default: op
+  plsdonate.admin.testdiscord:
+    description: Send a test Discord webhook embed
     default: op
   plsdonate.admin.reload:
     description: Reload the plugin configuration

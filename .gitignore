@@ -15,5 +15,9 @@ Thumbs.db
 
 # Agent/Skills files
 .agents/
+.claude/
 skills-lock.json
 .gemini/
+
+# Local session notes (not for upstream)
+SESSION_NOTES.md

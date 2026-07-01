@@ -7,16 +7,14 @@ enabled: true
 # Available languages: en-US
 language: "en-US"
 
-# Global Number Formatting
-format:
-  # The locale used for number formatting.
-  # This determines the decimal and thousand separators.
-  # Common Locales by Format:
-  # - id-ID 1.000.000 (Indonesian)
-  # - en-US 1,000,000 (US English)
-  # - fr-FR 1 000 000 (French)
-  # - de-CH 1'000'000 (Swiss German)
-  locale: "id-ID"
+# Webhook Listener Configuration
+webhook:
+  # Port number where the webhook listens. It can be anything from 0-65535.
+  # Ensure this port is open in your firewall and/or server panel.
+  port: 21172
+
+  # The URL path for the webhook. (e.g., http://your-ip:port/plsdonate)
+  path: "plsdonate"
 
 # Tako.id API Integration
 tako:
@@ -40,16 +38,7 @@ tako:
     # Starting amount (if you want to include previous donations manually)
     start-offset: 0
 
-# Webhook Listener Configuration
-webhook:
-  # Port number where the webhook listens. It can be anything from 0-65535.
-  # Ensure this port is open in your firewall and/or server panel.
-  port: 21172
-
-  # The URL path for the webhook. (e.g., http://your-ip:port/plsdonate)
-  path: "plsdonate"
-
-# Main Donation Command Settings
+# Donation Feature Configuration
 donate:
   amount:
     # Minimum amount a player can donate per request.
@@ -70,13 +59,73 @@ donate:
   # Global notification settings
   notification: true
 
-# Triggers System
-triggers:
-  # Enable or disable the ente triggers system globally
+  # Triggers System
+  triggers: false
+
+# Discord Webhook Notification
+#
+# Sends a fully customizable embed to Discord when a LIVE donation arrives.
+# below is yours to edit (no hardcoded footer, branding, or ads).
+#
+# Placeholders usable in any text/url field:
+#   {PLAYER}           - Donor's name
+#   {AMOUNT}           - Raw amount (e.g. 50000)
+#   {AMOUNT_FORMATTED} - Formatted amount (e.g. 50.000)
+#   {MESSAGE}          - Donation message
+#   {METHOD}           - Payment method (QRIS / GoPay / PayPal)
+#   {ID}               - Transaction ID
+#   {DATE}             - Date/time the donation was received
+#   {PLAYER_HEAD}      - URL of the donor's avatar (for icon-url / thumbnail / image)
+#
+discord:
   enabled: false
 
-# Bedrock Support (Requires GeyserMC and Floodgate on your server)
-bedrock-support: false
+  # One or more Discord webhook URLs. Every listed webhook receives the embed.
+  webhooks:
+    - "https://discord.com/api/webhooks/ID/TOKEN"
+
+  embed:
+    # Color of the embed's left bar, as a hex code. Leave blank to omit.
+    color: "#FFD700"
+
+    # Small line + icon at the very top of the embed.
+    author:
+      icon-url: "{PLAYER_HEAD}"
+      name: "New Donation!"
+
+    # Large bold heading. Leave blank to omit.
+    title: ""
+
+    # Main body text. Supports basic Discord markdown (**bold**, *italic*).
+    description: "**{PLAYER}** just donated **Rp{AMOUNT_FORMATTED}**!"
+
+    # Small image shown at the top-right of the embed. Can be {PLAYER_HEAD} or
+    # any image URL. Leave blank to omit.
+    thumbnail: "{PLAYER_HEAD}"
+
+    # Large full-width image shown at the bottom of the embed (above the footer).
+    # Good for a banner or donation artwork. Can be {PLAYER_HEAD} or any image URL.
+    # Leave blank to omit.
+    image: ""
+
+    # Extra key/value rows. Any field whose value resolves to empty is hidden,
+    # so e.g. the Message row disappears automatically when no message is given.
+    fields:
+      - name: "Amount"
+        value: "Rp{AMOUNT_FORMATTED}"
+        inline: true
+      - name: "Method"
+        value: "{METHOD}"
+        inline: true
+      - name: "Message"
+        value: "{MESSAGE}"
+        inline: false
+
+    # Small line + icon at the bottom of the embed.
+    footer:
+      icon-url: "https://imgur.com/tnfqsHW"
+      text: "plsDonate"
+      timestamp: true
 
 # Advanced SMTP Email System (Used to send clickable payment links to Bedrock players)
 email:
@@ -89,27 +138,25 @@ email:
   body-template: "payment.html"
 
   # Fallback SMTP System
-  # The plugin will attempt to use '1'. If it fails, it will attempt to fallback to '2', and so on.
-  # If 'from' is omitted/blank, the plugin will automatically use the login 'user' email.
+  # The plugin will iterate through the list in order, using the first working host.
+  # If 'from' email is omitted/blank, the plugin will fall back to the login 'user' email.
   hosts:
-    "1":
-      host: "smtp.gmail.com"
+    - host: "smtp.gmail.com"
       port: 587
       user: "email@gmail.com"
       pass: "your_app_password"
       secure: false
-
+      # Custom sender details for this specific host
       from:
         name: "plsDonate"
         # Optional: Put your custom routing email here!
         email: ""
 
-    # Example Fallback Host
-    # "2":
-    #   host: "smtp.mailgun.org"
+    # Example Fallback Host (uncomment and configure)
+    # - host: "smtp.office365.com"
     #   port: 587
-    #   user: "postmaster@yourdomain.com"
-    #   pass: "mailgun_password_here"
+    #   user: "email2@example.com"
+    #   pass: "another_password"
     #   secure: false
     #   from:
     #     name: "plsDonate"
@@ -136,3 +183,52 @@ sound-effects:
   donation-received:
     - "minecraft:entity.player.levelup,1,1"
     - "minecraft:entity.experience_orb.pickup,1,1"
+
+# Bedrock Donation Form Configuration
+# Controls the form shown when a Bedrock player runs /donate without arguments.
+#
+# Amount modes:
+#   TEXT     - Player types the amount freely in a text input field.
+#   DROPDOWN - Player selects from a fixed list of predefined amounts.
+#   SLIDER   - Player drags a slider (configure min, max, step below).
+donation-form:
+  amount-mode: TEXT
+
+  # Predefined amounts for DROPDOWN mode.
+  # Must be whole numbers. Values are sorted before display.
+  # Ignored when amount-mode is TEXT or SLIDER.
+  amount-presets: [5000, 10000, 25000, 50000, 100000, 250000, 500000]
+
+  # Settings for SLIDER mode.
+  # Ignored when amount-mode is TEXT or DROPDOWN.
+  amount-slider-min: 1000
+  amount-slider-max: 10000000
+  amount-slider-step: 5000
+  amount-slider-default: 50000
+
+  # Payment methods available in the form dropdown.
+  #   id  - Internal method identifier (must be: qris, gopay, paypal).
+  #   min - Minimum donation amount for this method. Set 0 for no method-specific minimum.
+  # The display label for each method is read from the language file:
+  #   donation-form.method-<id>  (falls back to the id in uppercase if missing)
+  payment-methods:
+    - id: qris
+      min: 5000
+    - id: gopay
+      min: 10000
+    - id: paypal
+      min: 50000
+
+# Bedrock Support (Requires GeyserMC and Floodgate on your server)
+bedrock-support: false
+
+# Global Number Formatting
+format:
+  # The locale used for number formatting.
+  # This determines the decimal and thousand separators.
+  # Common Locales by Format:
+  # - id-ID 1.000.000 (Indonesian)
+  # - en-US 1,000,000 (US English)
+  # - fr-FR 1 000 000 (French)
+  # - de-CH 1'000'000 (Swiss German)
+  locale: "id-ID"

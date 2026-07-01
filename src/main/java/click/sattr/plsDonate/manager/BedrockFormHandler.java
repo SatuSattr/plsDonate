@@ -5,16 +5,20 @@ import click.sattr.plsDonate.util.Constants;
 import click.sattr.plsDonate.util.MessageUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.geysermc.cumulus.form.CustomForm;
 import org.geysermc.cumulus.form.SimpleForm;
 import org.geysermc.floodgate.api.FloodgateApi;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class BedrockFormHandler {
 
     private final PlsDonate plugin;
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$");
 
     public BedrockFormHandler(PlsDonate plugin) {
         this.plugin = plugin;
@@ -22,6 +26,171 @@ public class BedrockFormHandler {
 
     public boolean isBedrockPlayer(Player player) {
         return FloodgateApi.getInstance().isFloodgatePlayer(player.getUniqueId());
+    }
+
+    public void openDonationForm(Player player) {
+        String amountMode = plugin.getConfig().getString("donation-form.amount-mode", "TEXT").toUpperCase();
+
+        List<Integer> amountPresetsRaw = plugin.getConfig().getIntegerList("donation-form.amount-presets");
+        if (amountPresetsRaw.isEmpty()) {
+            amountPresetsRaw = List.of(5000, 10000, 25000, 50000, 100000, 250000, 500000);
+        }
+        final List<Integer> amountPresets = amountPresetsRaw.stream().sorted().collect(java.util.stream.Collectors.toList());
+
+        int sliderMin = plugin.getConfig().getInt("donation-form.amount-slider-min", 1000);
+        int sliderMax = plugin.getConfig().getInt("donation-form.amount-slider-max", 10000000);
+        int sliderStep = plugin.getConfig().getInt("donation-form.amount-slider-step", 5000);
+        int sliderDefault = plugin.getConfig().getInt("donation-form.amount-slider-default", 50000);
+
+        List<Map<?, ?>> paymentMethodsRaw = plugin.getConfig().getMapList("donation-form.payment-methods");
+        final List<String> methodIds;
+        final List<Integer> methodMins;
+
+        if (paymentMethodsRaw.isEmpty()) {
+            methodIds = List.of("qris", "gopay", "paypal");
+            methodMins = List.of(5000, 10000, 50000);
+        } else {
+            List<String> ids = new ArrayList<>();
+            List<Integer> mins = new ArrayList<>();
+            for (Map<?, ?> entry : paymentMethodsRaw) {
+                String id = String.valueOf(entry.get("id")).toLowerCase();
+                int min = 0;
+                Object minObj = entry.get("min");
+                if (minObj instanceof Number) {
+                    min = ((Number) minObj).intValue();
+                }
+                ids.add(id);
+                mins.add(min);
+            }
+            methodIds = java.util.Collections.unmodifiableList(ids);
+            methodMins = java.util.Collections.unmodifiableList(mins);
+        }
+
+        List<String> methodDisplayNames = new ArrayList<>();
+        for (String id : methodIds) {
+            String label = plugin.getLangConfig().getString("donation-form.method-" + id, id.toUpperCase());
+            methodDisplayNames.add(label);
+        }
+
+        String title = plugin.getLangConfig().getString("donation-form.title", "Donation Form");
+        String amountLabel = plugin.getLangConfig().getString("donation-form.amount-label", "Amount");
+        String amountPlaceholder = plugin.getLangConfig().getString("donation-form.amount-placeholder", "Enter amount...");
+        String emailLabel = plugin.getLangConfig().getString("donation-form.email-label", "Email");
+        String emailPlaceholder = plugin.getLangConfig().getString("donation-form.email-placeholder", "your@email.com");
+        String methodLabel = plugin.getLangConfig().getString("donation-form.method-label", "Payment Method");
+        String messageLabel = plugin.getLangConfig().getString("donation-form.message-label", "Message (optional)");
+        String messagePlaceholder = plugin.getLangConfig().getString("donation-form.message-placeholder", "Your message...");
+
+        CustomForm.Builder builder = CustomForm.builder().title(title);
+
+        switch (amountMode) {
+            case "DROPDOWN":
+                List<String> presetLabels = new ArrayList<>();
+                for (Integer p : amountPresets) {
+                    presetLabels.add(MessageUtils.formatAmount(plugin, p.doubleValue()));
+                }
+                builder.dropdown(amountLabel, presetLabels);
+                break;
+            case "SLIDER":
+                builder.slider(amountLabel, sliderMin, sliderMax, sliderStep, sliderDefault);
+                break;
+            default:
+                builder.input(amountLabel, amountPlaceholder, "");
+                break;
+        }
+        builder.input(emailLabel, emailPlaceholder, "");
+        builder.dropdown(methodLabel, methodDisplayNames);
+        builder.input(messageLabel, messagePlaceholder, "");
+
+        CustomForm form = builder.validResultHandler((ff, response) -> {
+            final double amount;
+            switch (amountMode) {
+                case "DROPDOWN": {
+                    int idx = response.asDropdown(0);
+                    amount = amountPresets.get(idx);
+                    break;
+                }
+                case "SLIDER": {
+                    amount = response.asSlider(0);
+                    break;
+                }
+                default: {
+                    String raw = response.asInput(0);
+                    try {
+                        amount = Double.parseDouble(raw);
+                        if (!Double.isFinite(amount)) throw new NumberFormatException();
+                    } catch (NumberFormatException e) {
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            Map<String, String> p = new HashMap<>();
+                            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                            player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-amount", "{PREFIX} <white>Please <red>enter a valid amount <white>using numbers only <gray>(example: 50000)"), p));
+                        });
+                        return;
+                    }
+                    break;
+                }
+            }
+
+            String email = response.asInput(1);
+            int methodIdx = response.asDropdown(2);
+            String formMessage = response.asInput(3);
+
+            String method = methodIds.get(methodIdx);
+            int methodMin = methodMins.get(methodIdx);
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (!EMAIL_PATTERN.matcher(email).matches() || email.length() > 64) {
+                    Map<String, String> p = new HashMap<>();
+                    p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-email", "{PREFIX} <white>Please <red>provide <white>a valid email <gray>example: (your@gmail.com)"), p));
+                    return;
+                }
+
+                double minConfig = plugin.getConfig().getDouble(Constants.CONF_DONATE_MIN_AMOUNT, 1000);
+                double maxConfig = plugin.getConfig().getDouble(Constants.CONF_DONATE_MAX_AMOUNT, 10000000);
+
+                if (amount < minConfig) {
+                    Map<String, String> p = new HashMap<>();
+                    p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    p.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatAmount(plugin, minConfig));
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("min-donation-error", "{PREFIX} <white>Sorry, <red>minimum <white>amount of donation is <yellow>Rp{AMOUNT_FORMATTED}"), p));
+                    return;
+                }
+                if (amount > maxConfig) {
+                    Map<String, String> p = new HashMap<>();
+                    p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    p.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatAmount(plugin, maxConfig));
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("max-donation-error", "{PREFIX} <white>Sorry, <red>maximum <white>amount of donation is <yellow>Rp{AMOUNT_FORMATTED}"), p));
+                    return;
+                }
+
+                if (amount < methodMin) {
+                    Map<String, String> p = new HashMap<>();
+                    p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    p.put(Constants.METHOD, method);
+                    p.put("{METHOD_UPPERCASED}", method.toUpperCase());
+                    p.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatAmount(plugin, (double) methodMin));
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("payment-method-min-error", "{PREFIX} <red>Minimum donation for {METHOD_UPPERCASED} is <yellow>Rp{AMOUNT_FORMATTED}"), p));
+                    return;
+                }
+
+                int configMaxMsgLen = plugin.getConfig().getInt(Constants.CONF_DONATE_MAX_MESSAGE, 255);
+                int platformMaxMsgLen = plugin.getDonationPlatform().getMaxMessageLength();
+                int maxMsgLen = Math.min(Math.min(configMaxMsgLen, platformMaxMsgLen), 190);
+
+                if (formMessage.length() > maxMsgLen) {
+                    Map<String, String> p = new HashMap<>();
+                    p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    p.put("{LIMIT}", String.valueOf(maxMsgLen));
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("message-length-error", "{PREFIX} <white>Sorry, <red>maximal length <white>of the message is <yellow>{LIMIT} Character. <white>Please shorten your message."), p));
+                    return;
+                }
+
+                sendConfirmationForm(player, amount, email, method, formMessage, false, false);
+            });
+        }).build();
+
+        FloodgateApi.getInstance().sendForm(player.getUniqueId(), form);
     }
 
     public void sendConfirmationForm(Player player, double amount, String email, String method, String message, boolean isSimulation, boolean isSandbox) {

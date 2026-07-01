@@ -6,6 +6,7 @@ import click.sattr.plsDonate.database.DatabaseManager;
 import click.sattr.plsDonate.database.repository.OfflineTriggerRepository;
 import click.sattr.plsDonate.database.repository.TransactionRepository;
 import click.sattr.plsDonate.manager.BedrockFormHandler;
+import click.sattr.plsDonate.manager.DiscordManager;
 import click.sattr.plsDonate.manager.DonationService;
 import click.sattr.plsDonate.manager.EmailManager;
 import click.sattr.plsDonate.manager.StatsManager;
@@ -49,6 +50,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
     private EmailManager emailManager;
     private DonationService donationService;
     private StatsManager statsManager;
+    private DiscordManager discordManager;
     private BedrockFormHandler bedrockFormHandler;
     private DonateCommand donateCommand;
     private plsDonateCommand pdnCommand;
@@ -64,6 +66,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
     public EmailManager getEmailManager() { return emailManager; }
     public DonationService getDonationService() { return donationService; }
     public StatsManager getStatsManager() { return statsManager; }
+    public DiscordManager getDiscordManager() { return discordManager; }
     public BedrockFormHandler getBedrockFormHandler() { return bedrockFormHandler; }
     
     @Override
@@ -109,6 +112,10 @@ public final class PlsDonate extends JavaPlugin implements Listener {
 
         // Initialize Donation Service
         donationService = new DonationService(this);
+
+        // Initialize Discord webhook notifications. Reads config per-request, so it is
+        // created once here and never recreated on reload (avoids leaking HttpClient pools).
+        discordManager = new DiscordManager(this);
 
         // Initialize stats cache (leaderboard + milestone) and warm it from the DB
         statsManager = new StatsManager(this);
@@ -234,14 +241,15 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         }
 
         // Email hosts check
-        org.bukkit.configuration.ConfigurationSection hosts = getConfig().getConfigurationSection("email.hosts");
-        if (hosts == null || hosts.getKeys(false).isEmpty()) {
+        List<Map<?, ?>> hostsList = getConfig().getMapList("email.hosts");
+        if (hostsList == null || hostsList.isEmpty()) {
             Bukkit.getConsoleSender().sendMessage(MessageUtils.parseMessage("{PREFIX} <red>[!] 'email.hosts' is missing/empty in config.yml! Payment emails will not be sent.</red>", p));
         } else {
             boolean hasValidHost = false;
-            for (String hostKey : hosts.getKeys(false)) {
-                String user = getConfig().getString("email.hosts." + hostKey + ".user", "");
-                String host = getConfig().getString("email.hosts." + hostKey + ".host", "");
+            for (Map<?, ?> hostMap : hostsList) {
+                if (hostMap == null) continue;
+                String user = String.valueOf(hostMap.get("user"));
+                String host = String.valueOf(hostMap.get("host"));
                 if (!user.isEmpty() && !host.isEmpty() && !"email@gmail.com".equalsIgnoreCase(user)) {
                     hasValidHost = true;
                     break;

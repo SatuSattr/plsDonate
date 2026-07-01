@@ -1,6 +1,7 @@
 package click.sattr.plsDonate.command;
 
 import click.sattr.plsDonate.PlsDonate;
+import click.sattr.plsDonate.database.repository.TransactionRepository;
 import click.sattr.plsDonate.util.Constants;
 import click.sattr.plsDonate.util.MessageUtils;
 import org.bukkit.Bukkit;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -47,6 +49,36 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             Map<String, String> pOnly = new HashMap<>();
             pOnly.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
             sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("command-only-players", "{PREFIX} <red>Only players can execute this command.</red>"), pOnly));
+            return true;
+        }
+
+        // Bedrock donation form (no args) — opens a form for filling amount, email, method, message
+        if (args.length == 0
+                && plugin.getBedrockFormHandler() != null
+                && plugin.getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false)
+                && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
+
+            if (!player.hasPermission(Constants.PERM_DONATE_REQUEST)) {
+                MessageUtils.sendLangMessage(player, plugin, "no-permission", null);
+                return true;
+            }
+
+            if (!player.hasPermission(Constants.PERM_DONATE_BYPASS_COOLDOWN)) {
+                long lastUsage = cooldowns.getOrDefault(player.getUniqueId(), 0L);
+                int cooldownSeconds = plugin.getConfig().getInt(Constants.CONF_DONATE_COOLDOWN, 10);
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastUsage < (cooldownSeconds * 1000L)) {
+                    long remaining = (cooldownSeconds * 1000L - (currentTime - lastUsage)) / 1000L;
+                    Map<String, String> p = new HashMap<>();
+                    p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    p.put(Constants.TIME, String.valueOf(remaining + 1));
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("cooldown-error", "{PREFIX} <white>Sorry, you're still in <yellow>{TIME}s <white>cooldown"), p));
+                    return true;
+                }
+            }
+
+            cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
+            plugin.getBedrockFormHandler().openDonationForm(player);
             return true;
         }
 
@@ -87,6 +119,36 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             plugin.getStatsManager().displayMilestone(player);
+            return true;
+        }
+
+        // History — a player's own donation records (COMPLETED + PENDING, sandbox excluded).
+        // "/donate history [page]" shows your own; "/donate history <player> [page]" needs the
+        // .others permission. A numeric first arg is read as a page (own history), otherwise a name.
+        if (args[0].equalsIgnoreCase("history")) {
+            if (!player.hasPermission(Constants.PERM_DONATE_HISTORY)) {
+                MessageUtils.sendLangMessage(player, plugin, "no-permission", null);
+                return true;
+            }
+
+            String targetName = player.getName();
+            int page = 1;
+
+            if (args.length >= 2) {
+                if (isNumericAmount(args[1])) {
+                    page = parsePage(args[1]);
+                } else {
+                    if (!player.hasPermission(Constants.PERM_DONATE_HISTORY_OTHERS)) {
+                        MessageUtils.sendLangMessage(player, plugin, "no-permission", null);
+                        return true;
+                    }
+                    targetName = args[1];
+                    if (args.length >= 3) page = parsePage(args[2]);
+                }
+            }
+
+            boolean viewingOther = !targetName.equalsIgnoreCase(player.getName());
+            displayHistory(player, targetName, page, viewingOther, label);
             return true;
         }
 
@@ -333,6 +395,82 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         cooldowns.remove(uuid);
     }
 
+    private static final int HISTORY_PAGE_SIZE = 10;
+
+    private int parsePage(String s) {
+        try {
+            return Math.max(1, Integer.parseInt(s));
+        } catch (NumberFormatException e) {
+            return 1;
+        }
+    }
+
+    /** Fetches the page off the main thread (no cache exists for history) then renders on the main thread. */
+    private void displayHistory(Player viewer, String targetName, int page, boolean viewingOther, String label) {
+        int offset = (page - 1) * HISTORY_PAGE_SIZE;
+        TransactionRepository repo = plugin.getTransactionRepository();
+
+        CompletableFuture.runAsync(() -> {
+            List<TransactionRepository.TransactionRecord> records = repo.getPlayerHistory(targetName, HISTORY_PAGE_SIZE, offset);
+            int totalCount = repo.getPlayerHistoryCount(targetName);
+            double total = repo.getPlayerTotal(targetName);
+            int rank = repo.getPlayerRank(targetName);
+
+            Bukkit.getScheduler().runTask(plugin, () ->
+                    renderHistory(viewer, targetName, page, viewingOther, label, records, totalCount, total, rank));
+        });
+    }
+
+    private void renderHistory(Player viewer, String targetName, int page, boolean viewingOther, String label,
+                               List<TransactionRepository.TransactionRecord> records, int totalCount, double total, int rank) {
+        if (!viewer.isOnline()) return;
+
+        Map<String, String> p = new HashMap<>();
+        p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+        p.put("{NAME}", targetName);
+
+        if (records.isEmpty()) {
+            MessageUtils.sendLangMessage(viewer, plugin, "history-empty", p);
+            return;
+        }
+
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalCount / HISTORY_PAGE_SIZE));
+        p.put("{PAGE}", String.valueOf(page));
+        p.put("{TOTAL_PAGES}", String.valueOf(totalPages));
+        // Total and rank reflect COMPLETED donations only; the list also shows PENDING, which the
+        // per-row status colour distinguishes (so an unpaid link doesn't inflate the headline total).
+        p.put("{TOTAL_FORMATTED}", MessageUtils.formatAmount(plugin, total));
+        p.put(Constants.RANK, rank > 0 ? "#" + rank : plugin.getLangConfig().getString("value-unranked", "Unranked"));
+
+        String headerKey = viewingOther ? "history-header-other" : "history-header";
+        viewer.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString(headerKey, "<gray>------ <aqua>History (Page {PAGE}/{TOTAL_PAGES}) <gray>------"), p));
+        viewer.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("history-summary", "  <white>Total: <green>Rp{TOTAL_FORMATTED} <gray>| <white>Rank: <yellow>{RANK}"), p));
+
+        String format = plugin.getLangConfig().getString("history-format", "<gray>{DATE} <gray>- <green>Rp{AMOUNT_FORMATTED} <gray>- {STATUS_COLORED}");
+        for (TransactionRepository.TransactionRecord r : records) {
+            Map<String, String> rp = new HashMap<>(p);
+            rp.put("{DATE}", formatDate(r.timestamp()));
+            rp.put(Constants.AMOUNT_FORMATTED, MessageUtils.formatAmount(plugin, r.amount()));
+            rp.put("{STATUS_COLORED}", MessageUtils.formatStatus(plugin.getLangConfig(), r.status()));
+            viewer.sendMessage(MessageUtils.parseMessage(format, rp));
+        }
+
+        String footer = plugin.getLangConfig().getString("history-footer", "<gray>----------------------------");
+        if (page < totalPages) {
+            String base = "/" + label + " history" + (viewingOther ? " " + targetName : "");
+            String hover = plugin.getLangConfig().getString("history-next-hover", "<gray>Click to view page {NEXT_PAGE}")
+                    .replace("{NEXT_PAGE}", String.valueOf(page + 1));
+            String nextBtn = " <yellow><click:run_command:\"" + base + " " + (page + 1) + "\"><hover:show_text:\"" + hover + "\">[Next Page »]</hover></click>";
+            viewer.sendMessage(MessageUtils.parseMessage(footer + nextBtn, p));
+        } else {
+            viewer.sendMessage(MessageUtils.parseMessage(footer, p));
+        }
+    }
+
+    private String formatDate(long timestamp) {
+        return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date(timestamp * 1000L));
+    }
+
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         List<String> completions = new ArrayList<>();
@@ -343,6 +481,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             if ("top".startsWith(sub)) completions.add("top");
             if ("leaderboard".startsWith(sub)) completions.add("leaderboard");
             if ("milestone".startsWith(sub)) completions.add("milestone");
+            if ("history".startsWith(sub)) completions.add("history");
 
             double min = plugin.getConfig().getDouble(Constants.CONF_DONATE_MIN_AMOUNT, 1000);
             long[] suggestions = { (long) min, (long) min + 5000, (long) min + 10000 };
@@ -353,6 +492,17 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             String sub = args[1].toLowerCase();
             for (String pg : List.of("1", "2", "3")) {
                 if (pg.startsWith(sub)) completions.add(pg);
+            }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("history")) {
+            String sub = args[1].toLowerCase();
+            // Page numbers for own history; online player names only for admins with the .others perm.
+            for (String pg : List.of("1", "2", "3")) {
+                if (pg.startsWith(sub)) completions.add(pg);
+            }
+            if (sender.hasPermission(Constants.PERM_DONATE_HISTORY_OTHERS)) {
+                for (Player online : Bukkit.getOnlinePlayers()) {
+                    if (online.getName().toLowerCase().startsWith(sub)) completions.add(online.getName());
+                }
             }
         } else if (isNumericAmount(args[0])) {
             // Only suggest email/method/message once arg-1 is an actual amount, so subcommands
