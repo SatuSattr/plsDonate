@@ -37,7 +37,7 @@ public class TriggersManager implements Listener {
     }
 
     public void processDonation(String donorName, double amount, String formattedAmount, String message, String paymentMethod, String txId) {
-        if (!plugin.getConfig().getBoolean("triggers.enabled", true)) return;
+        if (!plugin.getConfig().getBoolean("donate.triggers", true)) return;
 
         // Prepare base placeholders
         if (donorName == null) donorName = "Anonymous";
@@ -140,7 +140,7 @@ public class TriggersManager implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        if (!plugin.getConfig().getBoolean("triggers.enabled", true)) return;
+        if (!plugin.getConfig().getBoolean("donate.triggers", true)) return;
 
         Player player = event.getPlayer();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {

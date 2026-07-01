@@ -241,14 +241,15 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         }
 
         // Email hosts check
-        org.bukkit.configuration.ConfigurationSection hosts = getConfig().getConfigurationSection("email.hosts");
-        if (hosts == null || hosts.getKeys(false).isEmpty()) {
+        List<Map<?, ?>> hostsList = getConfig().getMapList("email.hosts");
+        if (hostsList == null || hostsList.isEmpty()) {
             Bukkit.getConsoleSender().sendMessage(MessageUtils.parseMessage("{PREFIX} <red>[!] 'email.hosts' is missing/empty in config.yml! Payment emails will not be sent.</red>", p));
         } else {
             boolean hasValidHost = false;
-            for (String hostKey : hosts.getKeys(false)) {
-                String user = getConfig().getString("email.hosts." + hostKey + ".user", "");
-                String host = getConfig().getString("email.hosts." + hostKey + ".host", "");
+            for (Map<?, ?> hostMap : hostsList) {
+                if (hostMap == null) continue;
+                String user = String.valueOf(hostMap.get("user"));
+                String host = String.valueOf(hostMap.get("host"));
                 if (!user.isEmpty() && !host.isEmpty() && !"email@gmail.com".equalsIgnoreCase(user)) {
                     hasValidHost = true;
                     break;
