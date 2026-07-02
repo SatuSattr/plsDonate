@@ -254,5 +254,14 @@ donation-form:
   method-qris: "<red>QRIS"
   method-gopay: "<green>GoPay <gray>- Min 10k"
   method-paypal: "<aqua>PayPal <gray>- Min 50k"
+  # Java Edition dialog button labels (1.21.6+ only)
+  submit-label: "Submit"
+  cancel-label: "Cancel"
+  confirm-yes-label: "Confirm"
+  confirm-no-label: "Cancel"
 # Shown when amount or email field is left empty on form submit.
 donation-form-incomplete: "{PREFIX} <red>Please fill in all required fields before submitting."
+
+# Body text shown in the Java Edition confirmation dialog (1.21.6+ only).
+# Available Placeholders: {AMOUNT_FORMATTED}, {EMAIL}, {METHOD}, {METHOD_COLORED}, {METHOD_UPPERCASED}, {MESSAGE}
+donation-confirmation-java-dialog: "<white>Amount: <green>Rp{AMOUNT_FORMATTED}\n<white>Email: <gray>{EMAIL}\n<white>Method: {METHOD_COLORED}\n<white>Message: <gray>{MESSAGE}"

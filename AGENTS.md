@@ -58,5 +58,5 @@ WebhookManager (com.sun.net.httpserver) ← Tako.id callback
 
 ## Dependency Quirks
 
-- `paper-api` and `floodgate` are upstream SNAPSHOT-only. Compiles against **oldest** supported Paper API (`1.21-R0.1-SNAPSHOT`) so one JAR runs on 1.21–26.x. Raising api-version shrinks server range.
-- Shaded libs: HikariCP, javax.mail, ConfigUpdater (→ `click.sattr.plsDonate.libs.configupdater`), bStats (→ `click.sattr.plsDonate.libs.bstats`).
+- `paper-api` and `floodgate` are upstream SNAPSHOT-only. Compiles against `1.21.6-R0.1-SNAPSHOT` (raised from 1.21 to support Java Dialog API). JAR still runs on 1.21–26.x for all non-dialog code; dialog features gracefully disabled on servers < 1.21.6.
+- Shaded libs: HikariCP, javax.mail, ConfigUpdater (→ `click.sattr.plsDonate.libs.configupdater`), bStats (→ `click.sattr.plsDonate.libs.bstats`), UniDialog (→ `click.sattr.plsDonate.libs.unidialog`).
