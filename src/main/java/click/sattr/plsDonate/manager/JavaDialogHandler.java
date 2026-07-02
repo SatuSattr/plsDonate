@@ -179,21 +179,20 @@ public class JavaDialogHandler {
             PaperMultiActionDialog dialog = dialogManager.createMultiActionDialog()
                     .title(title)
                     .afterAction(io.github.projectunified.unidialog.core.dialog.Dialog.AfterAction.CLOSE)
-                    .body(b -> b.text().text(headerComponent))
                     .action(a -> a
                             .label(yesLabel)
                             .runCommand(confirmCommand))
                     .exitAction(a -> a
                             .label(noLabel));
 
-            // Add optional item body from confirmation dialog config
+            // Add optional item body first (appears above header-text)
             String displayItemStr = plugin.getLangConfig().getString("donation-confirmation-java-dialog.display-item", "");
             if (!displayItemStr.isEmpty()) {
                 org.bukkit.Material mat = org.bukkit.Material.matchMaterial(displayItemStr);
                 if (mat != null) {
                     org.bukkit.inventory.ItemStack displayItem = new org.bukkit.inventory.ItemStack(mat);
-                    int itemWidth = plugin.getLangConfig().getInt("donation-confirmation-java-dialog.display-item-width", 64);
-                    int itemHeight = plugin.getLangConfig().getInt("donation-confirmation-java-dialog.display-item-height", 64);
+                    int itemWidth = plugin.getLangConfig().getInt("donation-confirmation-java-dialog.display-item-width", 16);
+                    int itemHeight = plugin.getLangConfig().getInt("donation-confirmation-java-dialog.display-item-height", 16);
                     dialog.body(b -> b.item()
                             .item(displayItem)
                             .width(itemWidth)
@@ -202,6 +201,9 @@ public class JavaDialogHandler {
                             .showTooltip(false));
                 }
             }
+
+            // Header-text appears below item
+            dialog.body(b -> b.text().text(headerComponent));
 
             dialog.opener().open(player);
             return true;

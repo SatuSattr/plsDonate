@@ -263,14 +263,14 @@ donation-form-java:
 
   # Item to display in the dialog body (material ID, e.g. minecraft:paper, minecraft:diamond).
   # Leave empty to hide.
-  display-item: "minecraft:paper"
-  # Size of the item display (pixels, 1-256)
-  display-item-width: 64
-  display-item-height: 64
+  display-item: "minecraft:enchanted_golden_apple"
+  # Size of the item display (pixels, 1-256). defaults to 16
+  display-item-width: 16
+  display-item-height: 16
 
   # Header text shown above the input fields in the donation form.
   # Supports MiniMessage. Leave empty to hide.
-  header-text: ""
+  header-text: "<gold>Thanks</gold> for wanting to <light_purple>donate</light_purple> to us!\nit will help us alot.\n \n<gray>Please fill out the form below."
 
   amount-label: "<white>Amount"
   email-label: "<white>Email"
@@ -283,16 +283,22 @@ donation-form-java:
   method-paypal: "<aqua>PayPal <gray>- Min 50k"
 
   # Button labels
-  submit-label: "Submit"
+  submit-label: "Next"
   cancel-label: "Cancel"
 
 # Java Edition confirmation dialog (1.21.6+ only).
 # Available Placeholders in header-text: {AMOUNT_FORMATTED}, {EMAIL}, {METHOD}, {METHOD_COLORED}, {METHOD_UPPERCASED}, {MESSAGE}
 donation-confirmation-java-dialog:
   title: "Confirm Your Donation Request"
+
+  # Item to display in the dialog body (material ID, e.g. minecraft:paper, minecraft:diamond).
+  # Leave empty to hide.
   display-item: ""
-  display-item-width: 64
-  display-item-height: 64
+
+  # Size of the item display (pixels, 1-256). defaults to 16
+  display-item-width: 16
+  display-item-height: 16
+
   header-text: "<white>Amount: <green>Rp{AMOUNT_FORMATTED}\n<white>Email: <gray>{EMAIL}\n<white>Method: {METHOD_COLORED}\n<white>Message: <gray>{MESSAGE}"
   yes-label: "Yes"
   no-label: "Cancel"
