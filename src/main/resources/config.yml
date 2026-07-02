@@ -113,6 +113,7 @@ email:
 #
 #   {PLAYER_HEAD}                       - Donor's head at 256px (lookup by player name)
 #   {PLAYER_HEAD_SKIN_RESTORER}         - Donor's head at 256px using their ACTIVE skin from SkinsRestorer.
+#   {SKIN_TEXTURE_ID_SKIN_RESTORER}     - Raw Mojang texture ID from SkinsRestorer (e.g. a3b4c5d6...).
 #
 #   {PLAYER_HEAD_SKIN_RESTORER_<size>}  - Same as above but at custom size, e.g. {PLAYER_HEAD_SKIN_RESTORER_128}
 #   {PLAYER_HEAD_<size>}                - Donor's head at custom size, e.g. {PLAYER_HEAD_64}
@@ -164,7 +165,7 @@ discord:
 
     # Small line + icon at the bottom of the embed.
     footer:
-      icon-url: "https://imgur.com/tnfqsHW"
+      icon-url: "https://i.imgur.com/tnfqsHW.png"
       text: "plsDonate"
       timestamp: true
 

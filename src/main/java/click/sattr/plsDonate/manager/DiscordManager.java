@@ -42,6 +42,11 @@ import java.util.regex.Pattern;
  *
  * <p>{@code {PLAYER_HEAD_SKIN_RESTORER}} requires SkinsRestorer to be installed on the server.
  * If SkinsRestorer is absent or the player has no skin data, it falls back to {@code {PLAYER_HEAD}}.
+ *
+ * <p>{@code {SKIN_TEXTURE_ID_SKIN_RESTORER}} returns the raw Mojang texture hash (e.g. {@code a3b4c5d6...}) as
+ * resolved by SkinsRestorer. Returns an empty string if SkinsRestorer is not installed, the player
+ * is offline, or no skin data is available. Unlike {@code {PLAYER_HEAD_SKIN_RESTORER}}, this
+ * placeholder does NOT produce a URL — it only exposes the bare texture ID for custom use.
  */
 public class DiscordManager {
 
@@ -72,8 +77,8 @@ public class DiscordManager {
                             String description, String thumbnail, String image, List<EmbedField> fields,
                             String footerText, String footerIconUrl, boolean timestamp) {}
 
-    private record Ctx(String headUrl, String headUrlSr, String player, String message, String amount,
-                       String amountFormatted, String method, String id, String date) {}
+    private record Ctx(String headUrl, String headUrlSr, String srTextureId, String player, String message,
+                       String amount, String amountFormatted, String method, String id, String date) {}
 
     public void sendDonation(String playerName, double amount, String message, String method, String txId) {
         if (!plugin.getConfig().getBoolean("discord.enabled", false)) return;
@@ -102,7 +107,8 @@ public class DiscordManager {
         String msg = (message == null) ? "" : message;
 
         String headUrlSr = resolveSkinsRestorerHeadUrl(playerName);
-        String payload = buildPayload(spec, playerName, headUrlSr, msg, amountStr, amountFormatted,
+        String srTextureId = resolveSkinsRestorerTextureId(playerName);
+        String payload = buildPayload(spec, playerName, headUrlSr, srTextureId, msg, amountStr, amountFormatted,
                 friendlyMethod, txId, date, Instant.now());
 
         int sent = 0;
@@ -141,12 +147,14 @@ public class DiscordManager {
                 c.getBoolean(EMBED_BASE + "footer.timestamp", true));
     }
 
-    public static String buildPayload(EmbedSpec spec, String player, String headUrlSr, String message, String amount,
+    public static String buildPayload(EmbedSpec spec, String player, String headUrlSr, String srTextureId,
+                                      String message, String amount,
                                       String amountFormatted, String method, String id, String date,
                                       Instant timestamp) {
         String srUrl = (headUrlSr != null && !headUrlSr.isBlank()) ? headUrlSr
                 : VZGE_URL_BASE + VZGE_DEFAULT_SIZE + "/" + enc(player);
-        Ctx c = new Ctx(VZGE_URL_BASE + VZGE_DEFAULT_SIZE + "/" + enc(player), srUrl,
+        String textureId = (srTextureId != null) ? srTextureId : "";
+        Ctx c = new Ctx(VZGE_URL_BASE + VZGE_DEFAULT_SIZE + "/" + enc(player), srUrl, textureId,
                 player, message, amount, amountFormatted, method, id, date);
 
         JsonObject embed = new JsonObject();
@@ -228,6 +236,7 @@ public class DiscordManager {
         return result
                 .replace("{PLAYER_HEAD_SKIN_RESTORER}", c.headUrlSr())
                 .replace("{PLAYER_HEAD}", c.headUrl())
+                .replace("{SKIN_TEXTURE_ID_SKIN_RESTORER}", c.srTextureId())
                 .replace("{PLAYER}", c.player())
                 .replace("{AMOUNT_FORMATTED}", c.amountFormatted())
                 .replace("{AMOUNT}", c.amount())
@@ -245,6 +254,7 @@ public class DiscordManager {
         return result
                 .replace("{PLAYER_HEAD_SKIN_RESTORER}", c.headUrlSr())
                 .replace("{PLAYER_HEAD}", c.headUrl())
+                .replace("{SKIN_TEXTURE_ID_SKIN_RESTORER}", enc(c.srTextureId()))
                 .replace("{PLAYER}", enc(c.player()))
                 .replace("{AMOUNT_FORMATTED}", enc(c.amountFormatted()))
                 .replace("{AMOUNT}", enc(c.amount()))
@@ -317,6 +327,34 @@ public class DiscordManager {
             plugin.getLogger().warning("[DiscordManager] Failed to resolve SkinsRestorer skin for "
                     + playerName + ": " + e.getMessage());
             return fallback;
+        }
+    }
+
+    /**
+     * Returns the raw Mojang texture hash for the player's active skin as resolved by SkinsRestorer
+     * (e.g. {@code a3b4c5d6...}). Returns an empty string if SkinsRestorer is not installed, the
+     * player is offline, or no skin data is available.
+     */
+    private String resolveSkinsRestorerTextureId(String playerName) {
+        if (Bukkit.getPluginManager().getPlugin("SkinsRestorer") == null) return "";
+        try {
+            Player player = Bukkit.getPlayerExact(playerName);
+            if (player == null) return "";
+
+            PlayerStorage playerStorage = SkinsRestorerProvider.get().getPlayerStorage();
+            Optional<SkinProperty> skinProperty = playerStorage.getSkinForPlayer(
+                    player.getUniqueId(), player.getName());
+            if (skinProperty.isEmpty()) return "";
+
+            String textureUrl = PropertyUtils.getSkinTextureUrl(skinProperty.get());
+            if (textureUrl == null || textureUrl.isBlank()) return "";
+
+            String textureHash = textureUrl.substring(textureUrl.lastIndexOf('/') + 1);
+            return textureHash.isBlank() ? "" : textureHash;
+        } catch (Exception e) {
+            plugin.getLogger().warning("[DiscordManager] Failed to resolve SkinsRestorer texture ID for "
+                    + playerName + ": " + e.getMessage());
+            return "";
         }
     }
 
