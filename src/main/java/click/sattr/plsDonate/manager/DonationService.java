@@ -56,8 +56,8 @@ public class DonationService {
             plugin.getTriggersManager().processDonation(playerName, amount, formattedAmount, message, method, transactionId);
         }
 
-        // 4. Discord webhook notification (live donations only; sandbox is excluded)
-        if (!isSandbox && plugin.getDiscordManager() != null) {
+        // 4. Discord webhook notification (fires for both sandbox and live donations when enabled)
+        if (plugin.getDiscordManager() != null) {
             plugin.getDiscordManager().sendDonation(playerName, amount, message, method, transactionId);
         }
     }

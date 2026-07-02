@@ -55,7 +55,6 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         // Bedrock donation form (no args) — opens a form for filling amount, email, method, message
         if (args.length == 0
                 && plugin.getBedrockFormHandler() != null
-                && plugin.getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false)
                 && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
 
             if (!player.hasPermission(Constants.PERM_DONATE_REQUEST)) {
@@ -79,6 +78,30 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
 
             cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
             plugin.getBedrockFormHandler().openDonationForm(player);
+            return true;
+        }
+
+        // Java donation dialog (no args, Java player, server 1.21.6+)
+        if (args.length == 0 && plugin.getJavaDialogHandler() != null) {
+            if (!player.hasPermission(Constants.PERM_DONATE_REQUEST)) {
+                MessageUtils.sendLangMessage(player, plugin, "no-permission", null);
+                return true;
+            }
+            if (!player.hasPermission(Constants.PERM_DONATE_BYPASS_COOLDOWN)) {
+                long lastUsage = cooldowns.getOrDefault(player.getUniqueId(), 0L);
+                int cooldownSeconds = plugin.getConfig().getInt(Constants.CONF_DONATE_COOLDOWN, 10);
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastUsage < (cooldownSeconds * 1000L)) {
+                    long remaining = (cooldownSeconds * 1000L - (currentTime - lastUsage)) / 1000L;
+                    Map<String, String> p = new HashMap<>();
+                    p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    p.put(Constants.TIME, String.valueOf(remaining + 1));
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("cooldown-error", "{PREFIX} <white>Sorry, you're still in <yellow>{TIME}s <white>cooldown"), p));
+                    return true;
+                }
+            }
+            cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
+            plugin.getJavaDialogHandler().openDonationForm(player);
             return true;
         }
 
@@ -303,7 +326,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         if (!requireConfirmation) {
             processDonation(player, amount, email, method, messageStr, plugin);
         } else {
-            if (plugin.getBedrockFormHandler() != null && plugin.getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false) && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
+            if (plugin.getBedrockFormHandler() != null && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
                 plugin.getBedrockFormHandler().sendConfirmationForm(player, amount, email, method, messageStr, false, false);
                 return true;
             }
@@ -327,8 +350,14 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
             p.put(Constants.COMMAND, "/" + label + " " + hash);
 
-            MessageUtils.sendLangMessageList(player, plugin, "donation-confirmation-java", p);
-            MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-confirmation");
+            // If Java dialog is supported, skip chat confirmation and show dialog instead
+            if (plugin.getJavaDialogHandler() != null) {
+                MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-confirmation");
+                plugin.getJavaDialogHandler().openConfirmationDialog(player, hash, amount, email, method, messageStr);
+            } else {
+                MessageUtils.sendLangMessageList(player, plugin, "donation-confirmation-java", p);
+                MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-confirmation");
+            }
         }
 
         return true;

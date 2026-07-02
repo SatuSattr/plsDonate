@@ -1,13 +1,10 @@
 # plsDonate default configuration
 
-# Whether or not the plugin logic should be executed
-enabled: true
-
 # The language file to use inside the 'lang' folder (without .yml).
 # Available languages: en-US
 language: "en-US"
 
-# Webhook Listener Configuration
+# Webhook Listener Configuration -----------------------------------------------
 webhook:
   # Port number where the webhook listens. It can be anything from 0-65535.
   # Ensure this port is open in your firewall and/or server panel.
@@ -16,7 +13,7 @@ webhook:
   # The URL path for the webhook. (e.g., http://your-ip:port/plsdonate)
   path: "plsdonate"
 
-# Tako.id API Integration
+# Tako.id API Integration -------------------------------------------------------
 tako:
   # Your creator name on tako.id. (case sensitive)
   creator: ""
@@ -38,7 +35,7 @@ tako:
     # Starting amount (if you want to include previous donations manually)
     start-offset: 0
 
-# Donation Feature Configuration
+# Donation Feature Configuration ------------------------------------------------
 donate:
   amount:
     # Minimum amount a player can donate per request.
@@ -62,72 +59,7 @@ donate:
   # Triggers System
   triggers: false
 
-# Discord Webhook Notification
-#
-# Sends a fully customizable embed to Discord when a LIVE donation arrives.
-# below is yours to edit (no hardcoded footer, branding, or ads).
-#
-# Placeholders usable in any text/url field:
-#   {PLAYER}           - Donor's name
-#   {AMOUNT}           - Raw amount (e.g. 50000)
-#   {AMOUNT_FORMATTED} - Formatted amount (e.g. 50.000)
-#   {MESSAGE}          - Donation message
-#   {METHOD}           - Payment method (QRIS / GoPay / PayPal)
-#   {ID}               - Transaction ID
-#   {DATE}             - Date/time the donation was received
-#   {PLAYER_HEAD}      - URL of the donor's avatar (for icon-url / thumbnail / image)
-#
-discord:
-  enabled: false
-
-  # One or more Discord webhook URLs. Every listed webhook receives the embed.
-  webhooks:
-    - "https://discord.com/api/webhooks/ID/TOKEN"
-
-  embed:
-    # Color of the embed's left bar, as a hex code. Leave blank to omit.
-    color: "#FFD700"
-
-    # Small line + icon at the very top of the embed.
-    author:
-      icon-url: "{PLAYER_HEAD}"
-      name: "New Donation!"
-
-    # Large bold heading. Leave blank to omit.
-    title: ""
-
-    # Main body text. Supports basic Discord markdown (**bold**, *italic*).
-    description: "**{PLAYER}** just donated **Rp{AMOUNT_FORMATTED}**!"
-
-    # Small image shown at the top-right of the embed. Can be {PLAYER_HEAD} or
-    # any image URL. Leave blank to omit.
-    thumbnail: "{PLAYER_HEAD}"
-
-    # Large full-width image shown at the bottom of the embed (above the footer).
-    # Good for a banner or donation artwork. Can be {PLAYER_HEAD} or any image URL.
-    # Leave blank to omit.
-    image: ""
-
-    # Extra key/value rows. Any field whose value resolves to empty is hidden,
-    # so e.g. the Message row disappears automatically when no message is given.
-    fields:
-      - name: "Amount"
-        value: "Rp{AMOUNT_FORMATTED}"
-        inline: true
-      - name: "Method"
-        value: "{METHOD}"
-        inline: true
-      - name: "Message"
-        value: "{MESSAGE}"
-        inline: false
-
-    # Small line + icon at the bottom of the embed.
-    footer:
-      icon-url: "https://imgur.com/tnfqsHW"
-      text: "plsDonate"
-      timestamp: true
-
-# Advanced SMTP Email System (Used to send clickable payment links to Bedrock players)
+# Advanced SMTP Email System ----------------------------------------------------
 email:
   # Name displayed as the sender in the user's inbox
   from-name: "plsDonate"
@@ -162,8 +94,80 @@ email:
     #     name: "plsDonate"
     #     email: ""
 
-# Audio feedback for donation stages.
-# Format: "sound_name,pitch,volume" (e.g., "entity.experience_orb.pickup,1.2,1.0")
+# Discord Webhook Notification --------------------------------------------------
+#
+# Sends a fully customizable embed to Discord when a LIVE donation arrives.
+# below is yours to edit (no hardcoded footer, branding, or ads).
+#
+# Placeholders usable in any text/url field:
+#   {PLAYER}                            - Donor's name
+#   {AMOUNT}                            - Raw amount (e.g. 50000)
+#   {AMOUNT_FORMATTED}                  - Formatted amount (e.g. 50.000)
+#   {MESSAGE}                           - Donation message
+#   {METHOD}                            - Payment method (QRIS / GoPay / PayPal)
+#   {ID}                                - Transaction ID
+#   {DATE}                              - Date/time the donation was received
+#
+#   {PLAYER_HEAD}                       - Donor's head at 256px (lookup by player name)
+#   {PLAYER_HEAD_SKIN_RESTORER}         - Donor's head at 256px using their ACTIVE skin from SkinsRestorer.
+#   {SKIN_TEXTURE_ID_SKIN_RESTORER}     - Raw Mojang texture ID from SkinsRestorer (e.g. a3b4c5d6...).
+#
+#   {PLAYER_HEAD_SKIN_RESTORER_<size>}  - Same as above but at custom size, e.g. {PLAYER_HEAD_SKIN_RESTORER_128}
+#   {PLAYER_HEAD_<size>}                - Donor's head at custom size, e.g. {PLAYER_HEAD_64}
+#                                         Valid sizes: 8–512 (square renders)
+discord:
+  enabled: false
+
+  # One or more Discord webhook URLs. Every listed webhook receives the embed.
+  webhooks:
+    - "https://discord.com/api/webhooks/ID/TOKEN"
+
+  embed:
+    # Color of the embed's left bar, as a hex code. Leave blank to omit.
+    color: "#FFD700"
+
+    # Small line + icon at the very top of the embed.
+    author:
+      icon-url: "{PLAYER_HEAD}"
+      name: "New Donation!"
+
+    # Large bold heading. Leave blank to omit.
+    title: ""
+
+    # Main body text. Supports basic Discord markdown (**bold**, *italic*).
+    description: "**{PLAYER}** just donated **Rp{AMOUNT_FORMATTED}**!"
+
+    # Small image shown at the top-right of the embed.
+    # Use {PLAYER_HEAD} or {PLAYER_HEAD_SKIN_RESTORER} for the donor's avatar,
+    # optionally with a custom size e.g. {PLAYER_HEAD_128}. Leave blank to omit.
+    thumbnail: "{PLAYER_HEAD}"
+
+    # Large full-width image shown at the bottom of the embed (above the footer).
+    # Good for a banner or donation artwork. Supports head placeholders or any image URL.
+    # Leave blank to omit.
+    image: ""
+
+    # Extra key/value rows. Any field whose value resolves to empty is hidden,
+    # so e.g. the Message row disappears automatically when no message is given.
+    fields:
+      - name: "Amount"
+        value: "Rp{AMOUNT_FORMATTED}"
+        inline: true
+      - name: "Method"
+        value: "{METHOD}"
+        inline: true
+      - name: "Message"
+        value: "{MESSAGE}"
+        inline: false
+
+    # Small line + icon at the bottom of the embed.
+    footer:
+      icon-url: "https://i.imgur.com/tnfqsHW.png"
+      text: "plsDonate"
+      timestamp: true
+
+# Audio feedback for donation stages. -------------------------------------------
+# Format: "sound_name,pitch,volume"
 sound-effects:
   # Sounds played when the player is first prompted to confirm their donation.
   donation-confirmation:
@@ -183,10 +187,8 @@ sound-effects:
   donation-received:
     - "minecraft:entity.player.levelup,1,1"
     - "minecraft:entity.experience_orb.pickup,1,1"
-# Bedrock Support (Requires GeyserMC and Floodgate on your server)
-bedrock-support: false
 
-# Global Number Formatting
+# Global Number Formatting ------------------------------------------------------
 format:
   # The locale used for number formatting.
   # This determines the decimal and thousand separators.

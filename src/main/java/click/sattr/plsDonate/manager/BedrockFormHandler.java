@@ -34,18 +34,18 @@ public class BedrockFormHandler {
 
         List<String> methodDisplayNames = new ArrayList<>();
         for (String id : methodIds) {
-            String raw = plugin.getLangConfig().getString("donation-form.method-" + id, id.toUpperCase());
+            String raw = plugin.getLangConfig().getString("donation-form-bedrock.method-" + id, id.toUpperCase());
             methodDisplayNames.add(legacySection.serialize(MessageUtils.parseMessage(raw)));
         }
 
-        String title             = legacySection.serialize(MessageUtils.parseMessage(plugin.getLangConfig().getString("donation-form.title", "Donation Form")));
-        String amountLabel       = legacySection.serialize(MessageUtils.parseMessage(plugin.getLangConfig().getString("donation-form.amount-label", "Amount")));
-        String amountPlaceholder = plugin.getLangConfig().getString("donation-form.amount-placeholder", "Enter amount...");
-        String emailLabel        = legacySection.serialize(MessageUtils.parseMessage(plugin.getLangConfig().getString("donation-form.email-label", "Email")));
-        String emailPlaceholder  = plugin.getLangConfig().getString("donation-form.email-placeholder", "your@email.com");
-        String methodLabel       = legacySection.serialize(MessageUtils.parseMessage(plugin.getLangConfig().getString("donation-form.method-label", "Payment Method")));
-        String messageLabel      = legacySection.serialize(MessageUtils.parseMessage(plugin.getLangConfig().getString("donation-form.message-label", "Message (optional)")));
-        String messagePlaceholder = plugin.getLangConfig().getString("donation-form.message-placeholder", "Your message...");
+        String title             = legacySection.serialize(MessageUtils.parseMessage(plugin.getLangConfig().getString("donation-form-bedrock.title", "Donation Form")));
+        String amountLabel       = legacySection.serialize(MessageUtils.parseMessage(plugin.getLangConfig().getString("donation-form-bedrock.amount-label", "Amount")));
+        String amountPlaceholder = plugin.getLangConfig().getString("donation-form-bedrock.amount-placeholder", "Enter amount...");
+        String emailLabel        = legacySection.serialize(MessageUtils.parseMessage(plugin.getLangConfig().getString("donation-form-bedrock.email-label", "Email")));
+        String emailPlaceholder  = plugin.getLangConfig().getString("donation-form-bedrock.email-placeholder", "your@email.com");
+        String methodLabel       = legacySection.serialize(MessageUtils.parseMessage(plugin.getLangConfig().getString("donation-form-bedrock.method-label", "Payment Method")));
+        String messageLabel      = legacySection.serialize(MessageUtils.parseMessage(plugin.getLangConfig().getString("donation-form-bedrock.message-label", "Message (optional)")));
+        String messagePlaceholder = plugin.getLangConfig().getString("donation-form-bedrock.message-placeholder", "Your message...");
 
         CustomForm form = CustomForm.builder().title(title)
                 .input(amountLabel, amountPlaceholder, "")
@@ -59,18 +59,6 @@ public class BedrockFormHandler {
                     String formMessage = response.asInput(3).trim();
 
                     String method = methodIds.get(methodIdx);
-
-                    // Validate required fields before dispatching
-                    if (amountStr.isEmpty() || email.isEmpty()) {
-                        Bukkit.getScheduler().runTask(plugin, () -> {
-                            Map<String, String> p = new HashMap<>();
-                            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
-                            player.sendMessage(MessageUtils.parseMessage(
-                                    plugin.getLangConfig().getString("donation-form-incomplete",
-                                            "{PREFIX} <red>Please fill in all required fields before submitting."), p));
-                        });
-                        return;
-                    }
 
                     // Build the /donate command and dispatch it — all validation lives in DonateCommand
                     String cmd = "donate " + amountStr + " " + email + " " + method

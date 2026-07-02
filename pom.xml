@@ -53,6 +53,10 @@
                                     <pattern>org.bstats</pattern>
                                     <shadedPattern>click.sattr.plsDonate.libs.bstats</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>io.github.projectunified.unidialog</pattern>
+                                    <shadedPattern>click.sattr.plsDonate.libs.unidialog</shadedPattern>
+                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>
@@ -84,6 +88,10 @@
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
+        <repository>
+            <id>codemc</id>
+            <url>https://repo.codemc.org/repository/maven-public/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -102,7 +110,7 @@
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.21-R0.1-SNAPSHOT</version>
+            <version>1.21.6-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -111,6 +119,14 @@
             <version>2.2</version>
         </dependency>
         
+        <!-- SkinsRestorer API (Soft dependency — only used when SR is installed) -->
+        <dependency>
+            <groupId>net.skinsrestorer</groupId>
+            <artifactId>skinsrestorer-api</artifactId>
+            <version>15.4.2</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Floodgate API (For Bedrock Checking) -->
         <dependency>
             <groupId>org.geysermc.floodgate</groupId>
@@ -132,6 +148,14 @@
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>5.1.0</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- UniDialog Paper (For Java 1.21.6+ Dialog support, shaded) -->
+        <dependency>
+            <groupId>io.github.projectunified</groupId>
+            <artifactId>uni-dialog-paper</artifactId>
+            <version>1.5.0</version>
             <scope>compile</scope>
         </dependency>
 

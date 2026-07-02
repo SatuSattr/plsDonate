@@ -96,10 +96,10 @@ donation-help:
 
 # General / System Messages
 command-only-players: "{PREFIX} <red>Only players can execute this command.</red>"
-fake-donation-triggered: "{PREFIX} <green>Fake donation successfully triggered (Sandbox Mode)!</green>"
-push-donation-triggered: "{PREFIX} <green>Donation successfully pushed (Live Mode)!</green>"
-fake-donation-processed: "{PREFIX} <green>Fake donation form successfully processed!</green>"
-push-donation-processed: "{PREFIX} <green>Donation form successfully pushed!</green>"
+fake-donation-triggered: "{PREFIX} <green>Donation successfully faked!</green>"
+push-donation-triggered: "{PREFIX} <green>Donation successfully pushed!</green>"
+fake-donation-processed: "{PREFIX} <green>Fake donation successfully processed!</green>"
+push-donation-processed: "{PREFIX} <green>Donation successfully processed!</green>"
 donation-processing: "{PREFIX} <gray>Processing your donation form... Please check your email shortly!</gray>"
 donation-email-sent: "{PREFIX} <green>A payment link has been sent to your email!</green>"
 api-error: "{PREFIX} <red>API Error: {ERROR}</red>"
@@ -240,8 +240,8 @@ loading-overlay: "{PREFIX} <gray>Fetching data from API... Please wait."
 
 # Bedrock Donation Form
 # Shown when a Bedrock player runs /donate without arguments.
-# Use MiniMessage tags for colors (e.g. <yellow>, <green>, <bold>).
-donation-form:
+# Supports MiniMessage tags (e.g. <yellow>, <green>, <bold>).
+donation-form-bedrock:
   title: "Donation"
   amount-label: "<white>Amount"
   amount-placeholder: "e.g 1000, 5000, 25000"
@@ -250,9 +250,55 @@ donation-form:
   method-label: "<white>Payment Method"
   message-label: "<white>Message (optional)"
   message-placeholder: "e.g Deez Nuts"
-  # Override display labels for each payment method (keyed by method id).
+  # Display labels for each payment method in the dropdown.
   method-qris: "<red>QRIS"
   method-gopay: "<green>GoPay <gray>- Min 10k"
   method-paypal: "<aqua>PayPal <gray>- Min 50k"
-# Shown when amount or email field is left empty on form submit.
-donation-form-incomplete: "{PREFIX} <red>Please fill in all required fields before submitting."
+
+# Java Edition Donation Dialog (1.21.6+ only)
+# Shown when a Java player runs /donate without arguments.
+# Supports MiniMessage tags for rich text (e.g. <yellow>, <green>, <bold>).
+donation-form-java:
+  title: "Donation"
+
+  # Item to display in the dialog body (material ID, e.g. minecraft:paper, minecraft:diamond).
+  # Leave empty to hide.
+  display-item: "minecraft:enchanted_golden_apple"
+  # Size of the item display (pixels, 1-256). defaults to 16
+  display-item-width: 16
+  display-item-height: 16
+
+  # Header text shown above the input fields in the donation form.
+  # Supports MiniMessage. Leave empty to hide.
+  header-text: "<gold>Thanks</gold> for wanting to <light_purple>donate</light_purple> to us!\nit will help us alot.\n \n<gray>Please fill out the form below."
+
+  amount-label: "<white>Amount"
+  email-label: "<white>Email"
+  method-label: "<white>Payment Method"
+  message-label: "<white>Message <gray>(optional)"
+
+  # Display labels for each payment method in the single-option selector.
+  method-qris: "<red>QRIS"
+  method-gopay: "<green>GoPay <gray>- Min 10k"
+  method-paypal: "<aqua>PayPal <gray>- Min 50k"
+
+  # Button labels
+  submit-label: "Next"
+  cancel-label: "Cancel"
+
+# Java Edition confirmation dialog (1.21.6+ only).
+# Available Placeholders in header-text: {AMOUNT_FORMATTED}, {EMAIL}, {METHOD}, {METHOD_COLORED}, {METHOD_UPPERCASED}, {MESSAGE}
+donation-confirmation-java-dialog:
+  title: "Confirm Your Donation Request"
+
+  # Item to display in the dialog body (material ID, e.g. minecraft:paper, minecraft:diamond).
+  # Leave empty to hide.
+  display-item: ""
+
+  # Size of the item display (pixels, 1-256). defaults to 16
+  display-item-width: 16
+  display-item-height: 16
+
+  header-text: "<white>Amount: <green>Rp{AMOUNT_FORMATTED}\n<white>Email: <gray>{EMAIL}\n<white>Method: {METHOD_COLORED}\n<white>Message: <gray>{MESSAGE}"
+  yes-label: "Yes"
+  no-label: "Cancel"
