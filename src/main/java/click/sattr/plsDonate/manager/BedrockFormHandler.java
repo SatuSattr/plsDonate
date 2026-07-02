@@ -60,18 +60,6 @@ public class BedrockFormHandler {
 
                     String method = methodIds.get(methodIdx);
 
-                    // Validate required fields before dispatching
-                    if (amountStr.isEmpty() || email.isEmpty()) {
-                        Bukkit.getScheduler().runTask(plugin, () -> {
-                            Map<String, String> p = new HashMap<>();
-                            p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
-                            player.sendMessage(MessageUtils.parseMessage(
-                                    plugin.getLangConfig().getString("donation-form-incomplete",
-                                            "{PREFIX} <red>Please fill in all required fields before submitting."), p));
-                        });
-                        return;
-                    }
-
                     // Build the /donate command and dispatch it — all validation lives in DonateCommand
                     String cmd = "donate " + amountStr + " " + email + " " + method
                             + (formMessage.isEmpty() ? "" : " " + formMessage);

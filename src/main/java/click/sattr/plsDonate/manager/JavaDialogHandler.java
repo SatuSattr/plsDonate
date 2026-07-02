@@ -4,7 +4,6 @@ import click.sattr.plsDonate.PlsDonate;
 import click.sattr.plsDonate.util.Constants;
 import click.sattr.plsDonate.util.MessageUtils;
 import io.github.projectunified.unidialog.paper.PaperDialogManager;
-import io.github.projectunified.unidialog.paper.dialog.PaperConfirmationDialog;
 import io.github.projectunified.unidialog.paper.dialog.PaperMultiActionDialog;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
@@ -144,7 +143,9 @@ public class JavaDialogHandler {
     }
 
     /**
-     * Opens a confirmation dialog for a pending donation.
+     * Opens a confirmation dialog for a pending donation using multi_action type.
+     * Yes button appears in the scrollable body area (near header-text),
+     * Cancel button appears in the footer via exitAction.
      *
      * @return true if the dialog was opened successfully, false on error
      */
@@ -152,47 +153,47 @@ public class JavaDialogHandler {
                                           String email, String method, String message) {
         try {
             Component title = MessageUtils.parseMessage(
-                    plugin.getLangConfig().getString("donation-form-java.confirm-title", "Confirm Donation"));
+                    plugin.getLangConfig().getString("donation-confirmation-java-dialog.title", "Confirm Your Donation Request"));
 
-            // Build body text from donation placeholders
+            // Build header-text with donation placeholders
             Map<String, String> p = MessageUtils.getDonationPlaceholders(
                     plugin, amount, player.getName(), email, method, message);
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
 
-            String bodyTemplate = plugin.getLangConfig().getString(
-                    "donation-confirmation-java-dialog",
+            String headerTemplate = plugin.getLangConfig().getString(
+                    "donation-confirmation-java-dialog.header-text",
                     "<white>Amount: <yellow>{AMOUNT_FORMATTED}\n<white>Email: <yellow>{EMAIL}\n<white>Method: <yellow>{METHOD}\n<white>Message: <gray>{MESSAGE}");
-            String bodyText = bodyTemplate;
+            String headerText = headerTemplate;
             for (Map.Entry<String, String> entry : p.entrySet()) {
-                bodyText = bodyText.replace(entry.getKey(), entry.getValue());
+                headerText = headerText.replace(entry.getKey(), entry.getValue());
             }
-            Component bodyComponent = MessageUtils.parseMessage(bodyText);
+            Component headerComponent = MessageUtils.parseMessage(headerText);
 
             Component yesLabel = MessageUtils.parseMessage(
-                    plugin.getLangConfig().getString("donation-form-java.confirm-yes-label", "Confirm"));
+                    plugin.getLangConfig().getString("donation-confirmation-java-dialog.yes-label", "Yes"));
             Component noLabel = MessageUtils.parseMessage(
-                    plugin.getLangConfig().getString("donation-form-java.confirm-no-label", "Cancel"));
+                    plugin.getLangConfig().getString("donation-confirmation-java-dialog.no-label", "Cancel"));
 
             final String confirmCommand = "donate " + hash;
 
-            PaperConfirmationDialog dialog = dialogManager.createConfirmationDialog()
+            PaperMultiActionDialog dialog = dialogManager.createMultiActionDialog()
                     .title(title)
                     .afterAction(io.github.projectunified.unidialog.core.dialog.Dialog.AfterAction.CLOSE)
-                    .body(b -> b.text().text(bodyComponent))
-                    .yesAction(a -> a
+                    .body(b -> b.text().text(headerComponent))
+                    .action(a -> a
                             .label(yesLabel)
                             .runCommand(confirmCommand))
-                    .noAction(a -> a
+                    .exitAction(a -> a
                             .label(noLabel));
 
-            // Add optional item body to confirmation dialog
-            String displayItemStr = plugin.getLangConfig().getString("donation-form-java.display-item", "");
+            // Add optional item body from confirmation dialog config
+            String displayItemStr = plugin.getLangConfig().getString("donation-confirmation-java-dialog.display-item", "");
             if (!displayItemStr.isEmpty()) {
                 org.bukkit.Material mat = org.bukkit.Material.matchMaterial(displayItemStr);
                 if (mat != null) {
                     org.bukkit.inventory.ItemStack displayItem = new org.bukkit.inventory.ItemStack(mat);
-                    int itemWidth = plugin.getLangConfig().getInt("donation-form-java.display-item-width", 64);
-                    int itemHeight = plugin.getLangConfig().getInt("donation-form-java.display-item-height", 64);
+                    int itemWidth = plugin.getLangConfig().getInt("donation-confirmation-java-dialog.display-item-width", 64);
+                    int itemHeight = plugin.getLangConfig().getInt("donation-confirmation-java-dialog.display-item-height", 64);
                     dialog.body(b -> b.item()
                             .item(displayItem)
                             .width(itemWidth)

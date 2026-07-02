@@ -260,34 +260,39 @@ donation-form-bedrock:
 # Supports MiniMessage tags for rich text (e.g. <yellow>, <green>, <bold>).
 donation-form-java:
   title: "Donation"
-  amount-label: "<white>Amount"
-  email-label: "<white>Email"
-  method-label: "<white>Payment Method"
-  message-label: "<white>Message <gray>(optional)"
-  # Display labels for each payment method in the single-option selector.
-  method-qris: "<red>QRIS"
-  method-gopay: "<green>GoPay <gray>- Min 10k"
-  method-paypal: "<aqua>PayPal <gray>- Min 50k"
-  # Button labels
-  submit-label: "Submit"
-  cancel-label: "Cancel"
-  # Confirmation dialog button labels
-  confirm-title: "Confirm Donation"
-  confirm-yes-label: "Confirm"
-  confirm-no-label: "Cancel"
-  # Header text shown above the input fields in the donation form.
-  # Supports MiniMessage. Leave empty to hide.
-  header-text: ""
+
   # Item to display in the dialog body (material ID, e.g. minecraft:paper, minecraft:diamond).
-  # Leave empty to hide. Use a custom model data item via resourcepack for best results.
+  # Leave empty to hide.
   display-item: "minecraft:paper"
   # Size of the item display (pixels, 1-256)
   display-item-width: 64
   display-item-height: 64
 
-# Shown when amount or email field is left empty on form submit (Bedrock).
-donation-form-incomplete: "{PREFIX} <red>Please fill in all required fields before submitting."
+  # Header text shown above the input fields in the donation form.
+  # Supports MiniMessage. Leave empty to hide.
+  header-text: ""
 
-# Body text shown in the Java Edition confirmation dialog (1.21.6+ only).
-# Available Placeholders: {AMOUNT_FORMATTED}, {EMAIL}, {METHOD}, {METHOD_COLORED}, {METHOD_UPPERCASED}, {MESSAGE}
-donation-confirmation-java-dialog: "<white>Amount: <green>Rp{AMOUNT_FORMATTED}\n<white>Email: <gray>{EMAIL}\n<white>Method: {METHOD_COLORED}\n<white>Message: <gray>{MESSAGE}"
+  amount-label: "<white>Amount"
+  email-label: "<white>Email"
+  method-label: "<white>Payment Method"
+  message-label: "<white>Message <gray>(optional)"
+
+  # Display labels for each payment method in the single-option selector.
+  method-qris: "<red>QRIS"
+  method-gopay: "<green>GoPay <gray>- Min 10k"
+  method-paypal: "<aqua>PayPal <gray>- Min 50k"
+
+  # Button labels
+  submit-label: "Submit"
+  cancel-label: "Cancel"
+
+# Java Edition confirmation dialog (1.21.6+ only).
+# Available Placeholders in header-text: {AMOUNT_FORMATTED}, {EMAIL}, {METHOD}, {METHOD_COLORED}, {METHOD_UPPERCASED}, {MESSAGE}
+donation-confirmation-java-dialog:
+  title: "Confirm Your Donation Request"
+  display-item: ""
+  display-item-width: 64
+  display-item-height: 64
+  header-text: "<white>Amount: <green>Rp{AMOUNT_FORMATTED}\n<white>Email: <gray>{EMAIL}\n<white>Method: {METHOD_COLORED}\n<white>Message: <gray>{MESSAGE}"
+  yes-label: "Yes"
+  no-label: "Cancel"
