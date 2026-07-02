@@ -100,9 +100,6 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         // Save default templates
         saveDefaultTemplates();
         
-        // Auto-toggle bedrock-support if Geyser and Floodgate are detected
-        checkAndAutoEnableBedrockSupport();
-        
         loadLanguageConfig();
 
         // Initialize Database & Repositories
@@ -144,8 +141,8 @@ public final class PlsDonate extends JavaPlugin implements Listener {
             getLogger().info("PlaceholderAPI detected! Placeholders registered.");
         }
         
-        // Initialize Bedrock/Floodgate Handler if enabled and installed
-        if (getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false) && getServer().getPluginManager().getPlugin("floodgate") != null) {
+        // Initialize Bedrock/Floodgate Handler if installed
+        if (getServer().getPluginManager().getPlugin("floodgate") != null) {
             try {
                 bedrockFormHandler = new BedrockFormHandler(this);
                 getLogger().info("Geyser/Floodgate detected! Bedrock UI support enabled.");
@@ -218,20 +215,6 @@ public final class PlsDonate extends JavaPlugin implements Listener {
         } catch (Exception ignored) {
         }
         return true;
-    }
-
-    private void checkAndAutoEnableBedrockSupport() {
-        boolean hasGeyser = getServer().getPluginManager().getPlugin("Geyser-Spigot") != null || 
-                           getServer().getPluginManager().getPlugin("Geyser") != null;
-        boolean hasFloodgate = getServer().getPluginManager().getPlugin("floodgate") != null;
-
-        if (hasGeyser && hasFloodgate) {
-            if (!getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false)) {
-                getConfig().set(Constants.CONF_BEDROCK_SUPPORT, true);
-                saveConfig();
-                getLogger().info("Geyser and Floodgate detected! 'bedrock-support' has been automatically enabled in config.yml.");
-            }
-        }
     }
 
     private void checkImportantConfigs() {
@@ -350,7 +333,7 @@ public final class PlsDonate extends JavaPlugin implements Listener {
             statsManager.refresh();
         }
 
-        if (bedrockFormHandler == null && getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false) && getServer().getPluginManager().getPlugin("floodgate") != null) {
+        if (bedrockFormHandler == null && getServer().getPluginManager().getPlugin("floodgate") != null) {
             try {
                 bedrockFormHandler = new BedrockFormHandler(this);
             } catch (Exception e) {

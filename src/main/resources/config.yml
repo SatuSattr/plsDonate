@@ -1,8 +1,5 @@
 # plsDonate default configuration
 
-# Whether or not the plugin logic should be executed
-enabled: true
-
 # The language file to use inside the 'lang' folder (without .yml).
 # Available languages: en-US
 language: "en-US"
@@ -190,9 +187,6 @@ sound-effects:
   donation-received:
     - "minecraft:entity.player.levelup,1,1"
     - "minecraft:entity.experience_orb.pickup,1,1"
-
-# Bedrock Support (Requires GeyserMC and Floodgate on your server) --------------
-bedrock-support: false
 
 # Global Number Formatting ------------------------------------------------------
 format:

@@ -55,7 +55,6 @@ public final class Constants {
     public static final String CONF_MILESTONE_OFFSET = "tako.milestone.start-offset";
     public static final String CONF_MILESTONE_TARGET = "tako.milestone.target";
     public static final String CONF_MILESTONE_TITLE = "tako.milestone.title";
-    public static final String CONF_BEDROCK_SUPPORT = "bedrock-support";
     
     // Formatting Configuration
     public static final String CONF_FORMAT_LOCALE = "format.locale";

@@ -55,7 +55,6 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         // Bedrock donation form (no args) — opens a form for filling amount, email, method, message
         if (args.length == 0
                 && plugin.getBedrockFormHandler() != null
-                && plugin.getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false)
                 && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
 
             if (!player.hasPermission(Constants.PERM_DONATE_REQUEST)) {
@@ -327,7 +326,7 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         if (!requireConfirmation) {
             processDonation(player, amount, email, method, messageStr, plugin);
         } else {
-            if (plugin.getBedrockFormHandler() != null && plugin.getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false) && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
+            if (plugin.getBedrockFormHandler() != null && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
                 plugin.getBedrockFormHandler().sendConfirmationForm(player, amount, email, method, messageStr, false, false);
                 return true;
             }

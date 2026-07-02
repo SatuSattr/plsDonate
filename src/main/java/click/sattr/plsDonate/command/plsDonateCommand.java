@@ -127,7 +127,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                     try {
                         int id = Integer.parseInt(args[2]);
                         if (sender instanceof Player player) {
-                            if (plugin.getBedrockFormHandler() != null && plugin.getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false) && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
+                            if (plugin.getBedrockFormHandler() != null && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
                                 plugin.getBedrockFormHandler().sendDeleteConfirmationForm(player, id);
                                 return true;
                             }
@@ -199,7 +199,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
                     if (args.length < 3) { sender.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("invalid-usage", "{PREFIX} <red>Invalid usage."), p)); return true; }
                     String target = args[2];
                     if (sender instanceof Player player) {
-                        if (plugin.getBedrockFormHandler() != null && plugin.getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false) && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
+                        if (plugin.getBedrockFormHandler() != null && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
                             plugin.getBedrockFormHandler().sendClearConfirmationForm(player, target);
                             return true;
                         }
@@ -331,7 +331,7 @@ public class plsDonateCommand implements CommandExecutor, TabCompleter {
             }
 
             if (plugin.getConfig().getBoolean(Constants.CONF_DONATE_CONFIRMATION, true)) {
-                if (plugin.getBedrockFormHandler() != null && plugin.getConfig().getBoolean(Constants.CONF_BEDROCK_SUPPORT, false) && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
+                if (plugin.getBedrockFormHandler() != null && plugin.getBedrockFormHandler().isBedrockPlayer(player)) {
                     plugin.getBedrockFormHandler().sendConfirmationForm(player, amount, email, method, message, true, isSandbox);
                     return true;
                 }
