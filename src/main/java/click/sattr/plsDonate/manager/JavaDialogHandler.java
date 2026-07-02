@@ -83,6 +83,7 @@ public class JavaDialogHandler {
 
             PaperMultiActionDialog dialog = dialogManager.createMultiActionDialog()
                     .title(title)
+                    .afterAction(io.github.projectunified.unidialog.core.dialog.Dialog.AfterAction.CLOSE)
                     .input("amount", b -> b.textInput()
                             .label(amountLabel)
                             .maxLength(10))
@@ -106,16 +107,38 @@ public class JavaDialogHandler {
                     .action(a -> a
                             .label(submitLabel)
                             .dynamicRunCommand("donate $(amount) $(email) $(method) $(message)"))
-                    // Cancel button — runs empty command (effectively does nothing / closes dialog)
-                    .action(a -> a
-                            .label(cancelLabel)
-                            .runCommand(""));
+                    // Cancel button — closes the dialog
+                    .exitAction(a -> a.label(cancelLabel));
+
+            // Add optional item body
+            String displayItemStr = plugin.getLangConfig().getString("donation-form-java.display-item", "");
+            if (!displayItemStr.isEmpty()) {
+                org.bukkit.Material mat = org.bukkit.Material.matchMaterial(displayItemStr);
+                if (mat != null) {
+                    org.bukkit.inventory.ItemStack displayItem = new org.bukkit.inventory.ItemStack(mat);
+                    int itemWidth = plugin.getLangConfig().getInt("donation-form-java.display-item-width", 64);
+                    int itemHeight = plugin.getLangConfig().getInt("donation-form-java.display-item-height", 64);
+                    dialog.body(b -> b.item()
+                            .item(displayItem)
+                            .width(itemWidth)
+                            .height(itemHeight)
+                            .showDecorations(false)
+                            .showTooltip(false));
+                }
+            }
+
+            // Add optional header text
+            String headerStr = plugin.getLangConfig().getString("donation-form-java.header-text", "");
+            if (!headerStr.isEmpty()) {
+                Component headerComponent = MessageUtils.parseMessage(headerStr);
+                dialog.body(b -> b.text().text(headerComponent));
+            }
 
             dialog.opener().open(player);
             return true;
         } catch (Throwable t) {
             plugin.getLogger().warning("JavaDialogHandler: failed to open donation form for "
-                    + player.getName() + ": " + t.getMessage());
+                    + player.getName() + ": " + t);
             return false;
         }
     }
@@ -154,12 +177,30 @@ public class JavaDialogHandler {
 
             PaperConfirmationDialog dialog = dialogManager.createConfirmationDialog()
                     .title(title)
+                    .afterAction(io.github.projectunified.unidialog.core.dialog.Dialog.AfterAction.CLOSE)
                     .body(b -> b.text().text(bodyComponent))
                     .yesAction(a -> a
                             .label(yesLabel)
                             .runCommand(confirmCommand))
                     .noAction(a -> a
                             .label(noLabel));
+
+            // Add optional item body to confirmation dialog
+            String displayItemStr = plugin.getLangConfig().getString("donation-form-java.display-item", "");
+            if (!displayItemStr.isEmpty()) {
+                org.bukkit.Material mat = org.bukkit.Material.matchMaterial(displayItemStr);
+                if (mat != null) {
+                    org.bukkit.inventory.ItemStack displayItem = new org.bukkit.inventory.ItemStack(mat);
+                    int itemWidth = plugin.getLangConfig().getInt("donation-form-java.display-item-width", 64);
+                    int itemHeight = plugin.getLangConfig().getInt("donation-form-java.display-item-height", 64);
+                    dialog.body(b -> b.item()
+                            .item(displayItem)
+                            .width(itemWidth)
+                            .height(itemHeight)
+                            .showDecorations(false)
+                            .showTooltip(false));
+                }
+            }
 
             dialog.opener().open(player);
             return true;

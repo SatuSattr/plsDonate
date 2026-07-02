@@ -275,6 +275,15 @@ donation-form-java:
   confirm-title: "Confirm Donation"
   confirm-yes-label: "Confirm"
   confirm-no-label: "Cancel"
+  # Header text shown above the input fields in the donation form.
+  # Supports MiniMessage. Leave empty to hide.
+  header-text: ""
+  # Item to display in the dialog body (material ID, e.g. minecraft:paper, minecraft:diamond).
+  # Leave empty to hide. Use a custom model data item via resourcepack for best results.
+  display-item: "minecraft:paper"
+  # Size of the item display (pixels, 1-256)
+  display-item-width: 64
+  display-item-height: 64
 
 # Shown when amount or email field is left empty on form submit (Bedrock).
 donation-form-incomplete: "{PREFIX} <red>Please fill in all required fields before submitting."
