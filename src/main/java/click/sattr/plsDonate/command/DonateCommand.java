@@ -82,6 +82,30 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        // Java donation dialog (no args, Java player, server 1.21.6+)
+        if (args.length == 0 && plugin.getJavaDialogHandler() != null) {
+            if (!player.hasPermission(Constants.PERM_DONATE_REQUEST)) {
+                MessageUtils.sendLangMessage(player, plugin, "no-permission", null);
+                return true;
+            }
+            if (!player.hasPermission(Constants.PERM_DONATE_BYPASS_COOLDOWN)) {
+                long lastUsage = cooldowns.getOrDefault(player.getUniqueId(), 0L);
+                int cooldownSeconds = plugin.getConfig().getInt(Constants.CONF_DONATE_COOLDOWN, 10);
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastUsage < (cooldownSeconds * 1000L)) {
+                    long remaining = (cooldownSeconds * 1000L - (currentTime - lastUsage)) / 1000L;
+                    Map<String, String> p = new HashMap<>();
+                    p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
+                    p.put(Constants.TIME, String.valueOf(remaining + 1));
+                    player.sendMessage(MessageUtils.parseMessage(plugin.getLangConfig().getString("cooldown-error", "{PREFIX} <white>Sorry, you're still in <yellow>{TIME}s <white>cooldown"), p));
+                    return true;
+                }
+            }
+            cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
+            plugin.getJavaDialogHandler().openDonationForm(player);
+            return true;
+        }
+
         // Help: accept any trailing args so "/donate help foo bar" still shows help
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
             if (!player.hasPermission(Constants.PERM_DONATE_HELP)) {
@@ -329,6 +353,11 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
 
             MessageUtils.sendLangMessageList(player, plugin, "donation-confirmation-java", p);
             MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-confirmation");
+
+            // Also show Java Dialog confirmation if supported
+            if (plugin.getJavaDialogHandler() != null) {
+                plugin.getJavaDialogHandler().openConfirmationDialog(player, hash, amount, email, method, messageStr);
+            }
         }
 
         return true;

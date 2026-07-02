@@ -53,6 +53,10 @@
                                     <pattern>org.bstats</pattern>
                                     <shadedPattern>click.sattr.plsDonate.libs.bstats</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>io.github.projectunified.unidialog</pattern>
+                                    <shadedPattern>click.sattr.plsDonate.libs.unidialog</shadedPattern>
+                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>
@@ -106,7 +110,7 @@
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.21-R0.1-SNAPSHOT</version>
+            <version>1.21.6-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -144,6 +148,14 @@
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>5.1.0</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- UniDialog Paper (For Java 1.21.6+ Dialog support, shaded) -->
+        <dependency>
+            <groupId>io.github.projectunified</groupId>
+            <artifactId>uni-dialog-paper</artifactId>
+            <version>1.5.0</version>
             <scope>compile</scope>
         </dependency>
 
