@@ -27,7 +27,7 @@ class DiscordManagerTest {
                 "**{PLAYER}** donated Rp{AMOUNT_FORMATTED}", "{PLAYER_HEAD}", "",
                 List.of(), "plsDonate", "", true);
 
-        String json = DiscordManager.buildPayload(spec, "Notch", "", "50000", "50.000",
+        String json = DiscordManager.buildPayload(spec, "Notch", null, "", "50000", "50.000",
                 "QRIS", "TX1", "2026-06-30 10:15:30", TS);
 
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
@@ -38,8 +38,8 @@ class DiscordManagerTest {
         assertEquals("**Notch** donated Rp50.000", embed.get("description").getAsString());
         assertEquals(16766720, embed.get("color").getAsInt());
         assertEquals("New Donation!", embed.getAsJsonObject("author").get("name").getAsString());
-        assertEquals("https://mc-heads.net/avatar/Notch", embed.getAsJsonObject("author").get("icon_url").getAsString());
-        assertEquals("https://mc-heads.net/avatar/Notch", embed.getAsJsonObject("thumbnail").get("url").getAsString());
+        assertEquals("https://vzge.me/face/256/Notch", embed.getAsJsonObject("author").get("icon_url").getAsString());
+        assertEquals("https://vzge.me/face/256/Notch", embed.getAsJsonObject("thumbnail").get("url").getAsString());
         assertEquals("2026-06-30T10:15:30Z", embed.get("timestamp").getAsString());
         assertFalse(embed.has("title"), "empty title is omitted");
     }
@@ -50,7 +50,7 @@ class DiscordManagerTest {
         EmbedSpec spec = new EmbedSpec("", "", "", "", "**{PLAYER}**", "", "",
                 List.of(), "", "", false);
 
-        String json = DiscordManager.buildPayload(spec, evil, "", "0", "0", "QRIS", "T", "d", TS);
+        String json = DiscordManager.buildPayload(spec, evil, null, "", "0", "0", "QRIS", "T", "d", TS);
 
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
         // No injected top-level keys: only what we put there.
@@ -68,7 +68,7 @@ class DiscordManagerTest {
         EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "https://skin.example/{PLAYER}", "",
                 List.of(), "", "", false);
 
-        String json = DiscordManager.buildPayload(spec, "evil/../x?a=b", "", "0", "0", "QRIS", "T", "d", TS);
+        String json = DiscordManager.buildPayload(spec, "evil/../x?a=b", null, "", "0", "0", "QRIS", "T", "d", TS);
 
         assertEquals("https://skin.example/evil%2F..%2Fx%3Fa%3Db",
                 embedOf(json).getAsJsonObject("thumbnail").get("url").getAsString());
@@ -79,7 +79,7 @@ class DiscordManagerTest {
         EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "", "https://banner.example/{PLAYER}",
                 List.of(), "", "", false);
 
-        String json = DiscordManager.buildPayload(spec, "evil/../x?a=b", "", "0", "0", "QRIS", "T", "d", TS);
+        String json = DiscordManager.buildPayload(spec, "evil/../x?a=b", null, "", "0", "0", "QRIS", "T", "d", TS);
 
         // image is a separate field from thumbnail and gets the same URL-encoding protection
         assertEquals("https://banner.example/evil%2F..%2Fx%3Fa%3Db",
@@ -92,10 +92,10 @@ class DiscordManagerTest {
         EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "{PLAYER_HEAD}", "",
                 List.of(), "", "", false);
 
-        String json = DiscordManager.buildPayload(spec, "foo bar", "", "0", "0", "QRIS", "T", "d", TS);
+        String json = DiscordManager.buildPayload(spec, "foo bar", null, "", "0", "0", "QRIS", "T", "d", TS);
 
         // space encoded exactly once -> %20, never %2520
-        assertEquals("https://mc-heads.net/avatar/foo%20bar",
+        assertEquals("https://vzge.me/face/256/foo%20bar",
                 embedOf(json).getAsJsonObject("thumbnail").get("url").getAsString());
     }
 
@@ -106,11 +106,11 @@ class DiscordManagerTest {
                 new EmbedField("Message", "{MESSAGE}", false));
         EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "", "", fields, "", "", false);
 
-        String emptyMsg = DiscordManager.buildPayload(spec, "Notch", "", "0", "50.000", "QRIS", "T", "d", TS);
+        String emptyMsg = DiscordManager.buildPayload(spec, "Notch", null, "", "0", "50.000", "QRIS", "T", "d", TS);
         assertEquals(1, embedOf(emptyMsg).getAsJsonArray("fields").size());
         assertEquals("Amount", embedOf(emptyMsg).getAsJsonArray("fields").get(0).getAsJsonObject().get("name").getAsString());
 
-        String withMsg = DiscordManager.buildPayload(spec, "Notch", "gg", "0", "50.000", "QRIS", "T", "d", TS);
+        String withMsg = DiscordManager.buildPayload(spec, "Notch", null, "gg", "0", "50.000", "QRIS", "T", "d", TS);
         assertEquals(2, embedOf(withMsg).getAsJsonArray("fields").size());
     }
 
@@ -120,27 +120,27 @@ class DiscordManagerTest {
                 List.of(), "", "", false);
 
         // plain text message -> not a URL -> icon omitted, author kept
-        String json = DiscordManager.buildPayload(spec, "Notch", "hello", "0", "0", "QRIS", "T", "d", TS);
+        String json = DiscordManager.buildPayload(spec, "Notch", null, "hello", "0", "0", "QRIS", "T", "d", TS);
         JsonObject author = embedOf(json).getAsJsonObject("author");
         assertEquals("Author", author.get("name").getAsString());
         assertFalse(author.has("icon_url"));
 
         // malicious url in message -> encoded so it no longer looks like a URL -> omitted
-        String evil = DiscordManager.buildPayload(spec, "Notch", "https://evil.com/x.png", "0", "0", "QRIS", "T", "d", TS);
+        String evil = DiscordManager.buildPayload(spec, "Notch", null, "https://evil.com/x.png", "0", "0", "QRIS", "T", "d", TS);
         assertFalse(embedOf(evil).getAsJsonObject("author").has("icon_url"));
     }
 
     @Test
     void invalidColorIsOmitted() {
         EmbedSpec spec = new EmbedSpec("notacolor", "", "", "", "x", "", "", List.of(), "", "", false);
-        String json = DiscordManager.buildPayload(spec, "Notch", "", "0", "0", "QRIS", "T", "d", TS);
+        String json = DiscordManager.buildPayload(spec, "Notch", null, "", "0", "0", "QRIS", "T", "d", TS);
         assertFalse(embedOf(json).has("color"));
     }
 
     @Test
     void timestampDisabledIsOmitted() {
         EmbedSpec spec = new EmbedSpec("", "", "", "", "x", "", "", List.of(), "", "", false);
-        String json = DiscordManager.buildPayload(spec, "Notch", "", "0", "0", "QRIS", "T", "d", TS);
+        String json = DiscordManager.buildPayload(spec, "Notch", null, "", "0", "0", "QRIS", "T", "d", TS);
         assertFalse(embedOf(json).has("timestamp"));
     }
 }

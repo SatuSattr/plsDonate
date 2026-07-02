@@ -35,7 +35,7 @@ WebhookManager (com.sun.net.httpserver) ← Tako.id callback
 
 **Config files (auto-created from resources on first run):** `config.yml`, `triggers.yml`, `lang/en-US.yml`.
 
-**Soft dependencies (loaded at startup if present, graceful fallback):** `floodgate`, `Geyser-Spigot`/`Geyser`, `PlaceholderAPI`.
+**Soft dependencies (loaded at startup if present, graceful fallback):** `floodgate`, `Geyser-Spigot`/`Geyser`, `PlaceholderAPI`, `SkinsRestorer`.
 
 ## Critical Patterns
 
@@ -45,7 +45,7 @@ WebhookManager (com.sun.net.httpserver) ← Tako.id callback
 - **Sanitize everything:** Pass player names and messages through `sanitize()` before command substitution.
 - **Async DB, sync Bukkit:** DB ops off main thread; Bukkit API calls dispatched via `Bukkit.getScheduler().runTask()`.
 - **Lang file for display labels:** Use `MessageUtils.formatStatus()`, `formatType()`, `friendlyMethod()` for status / type / method display. Never hardcode colours or labels in command handlers.
-- **Discord injection surfaces:** Text fields → Gson `addProperty()` (data). URL fields → `URLEncoder` per-value. `{PLAYER_HEAD}` is pre-encoded and substituted verbatim.
+- **Discord injection surfaces:** Text fields → Gson `addProperty()` (data). URL fields → `URLEncoder` per-value. `{PLAYER_HEAD}` and `{PLAYER_HEAD_SKIN_RESTORER}` are pre-encoded and substituted verbatim (never double-encoded). Size variants `{PLAYER_HEAD_<size>}` / `{PLAYER_HEAD_SKIN_RESTORER_<size>}` are resolved via regex before fixed-name substitution. All head placeholders render via `vzge.me`. `buildPayload()` takes an explicit `headUrlSr` parameter (pass `null` in tests — auto-falls back to VZGE player-name URL).
 - **DonationPlatform interface:** Currently only `TakoPlatform` implements it. `createDonation()` returns `CompletableFuture<DonationResponse>`. `parseWebhook()` returns `WebhookResult`.
 - **On reload:** Only `webhookManager.stop()`/`start()` (recreates server), `emailManager.reload()`, config/lang reload. `discordManager` and `donationPlatform` are **never** recreated (avoids leaking HttpClient thread pools).
 

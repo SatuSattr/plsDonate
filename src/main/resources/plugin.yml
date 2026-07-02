@@ -8,7 +8,7 @@ commands:
     aliases: [pdn]
   donate:
     description: Main donation command
-softdepend: [floodgate, Geyser-Spigot, Geyser, PlaceholderAPI]
+softdepend: [floodgate, Geyser-Spigot, Geyser, PlaceholderAPI, SkinsRestorer]
 permissions:
   plsdonate.donate.request:
     description: Create a donation request via /donate

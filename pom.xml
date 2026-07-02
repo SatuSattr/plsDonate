@@ -84,6 +84,10 @@
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
+        <repository>
+            <id>codemc</id>
+            <url>https://repo.codemc.org/repository/maven-public/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -111,6 +115,14 @@
             <version>2.2</version>
         </dependency>
         
+        <!-- SkinsRestorer API (Soft dependency — only used when SR is installed) -->
+        <dependency>
+            <groupId>net.skinsrestorer</groupId>
+            <artifactId>skinsrestorer-api</artifactId>
+            <version>15.4.2</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Floodgate API (For Bedrock Checking) -->
         <dependency>
             <groupId>org.geysermc.floodgate</groupId>
