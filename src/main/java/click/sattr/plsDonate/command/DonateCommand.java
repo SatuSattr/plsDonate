@@ -351,12 +351,13 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             p.put(Constants.PREFIX, plugin.getLangConfig().getString("prefix", Constants.DEFAULT_PREFIX));
             p.put(Constants.COMMAND, "/" + label + " " + hash);
 
-            MessageUtils.sendLangMessageList(player, plugin, "donation-confirmation-java", p);
-            MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-confirmation");
-
-            // Also show Java Dialog confirmation if supported
+            // If Java dialog is supported, skip chat confirmation and show dialog instead
             if (plugin.getJavaDialogHandler() != null) {
+                MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-confirmation");
                 plugin.getJavaDialogHandler().openConfirmationDialog(player, hash, amount, email, method, messageStr);
+            } else {
+                MessageUtils.sendLangMessageList(player, plugin, "donation-confirmation-java", p);
+                MessageUtils.playConfigSounds(player, plugin, "sound-effects.donation-confirmation");
             }
         }
 
