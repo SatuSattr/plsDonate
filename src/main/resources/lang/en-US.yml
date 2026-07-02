@@ -240,26 +240,43 @@ loading-overlay: "{PREFIX} <gray>Fetching data from API... Please wait."
 
 # Bedrock Donation Form
 # Shown when a Bedrock player runs /donate without arguments.
-# Use MiniMessage tags for colors (e.g. <yellow>, <green>, <bold>).
-donation-form:
+# Labels support MiniMessage tags, but Cumulus strips color from input labels — use plain text here.
+donation-form-bedrock:
+  title: "Donation"
+  amount-label: "Amount"
+  amount-placeholder: "e.g 1000, 5000, 25000"
+  email-label: "Email"
+  email-placeholder: "your@email.com"
+  method-label: "Payment Method"
+  message-label: "Message (optional)"
+  message-placeholder: "e.g Deez Nuts"
+  # Display labels for each payment method in the dropdown.
+  method-qris: "QRIS"
+  method-gopay: "GoPay - Min 10k"
+  method-paypal: "PayPal - Min 50k"
+
+# Java Edition Donation Dialog (1.21.6+ only)
+# Shown when a Java player runs /donate without arguments.
+# Supports MiniMessage tags for rich text (e.g. <yellow>, <green>, <bold>).
+donation-form-java:
   title: "Donation"
   amount-label: "<white>Amount"
-  amount-placeholder: "e.g 1000, 5000, 25000"
   email-label: "<white>Email"
-  email-placeholder: "your@email.com"
   method-label: "<white>Payment Method"
-  message-label: "<white>Message (optional)"
-  message-placeholder: "e.g Deez Nuts"
-  # Override display labels for each payment method (keyed by method id).
+  message-label: "<white>Message <gray>(optional)"
+  # Display labels for each payment method in the single-option selector.
   method-qris: "<red>QRIS"
   method-gopay: "<green>GoPay <gray>- Min 10k"
   method-paypal: "<aqua>PayPal <gray>- Min 50k"
-  # Java Edition dialog button labels (1.21.6+ only)
+  # Button labels
   submit-label: "Submit"
   cancel-label: "Cancel"
+  # Confirmation dialog button labels
+  confirm-title: "Confirm Donation"
   confirm-yes-label: "Confirm"
   confirm-no-label: "Cancel"
-# Shown when amount or email field is left empty on form submit.
+
+# Shown when amount or email field is left empty on form submit (Bedrock).
 donation-form-incomplete: "{PREFIX} <red>Please fill in all required fields before submitting."
 
 # Body text shown in the Java Edition confirmation dialog (1.21.6+ only).

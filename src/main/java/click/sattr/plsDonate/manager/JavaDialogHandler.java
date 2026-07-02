@@ -66,20 +66,20 @@ public class JavaDialogHandler {
             final List<String> methodIds = List.of("qris", "gopay", "paypal");
 
             Component title = MessageUtils.parseMessage(
-                    plugin.getLangConfig().getString("donation-form.title", "Donation"));
+                    plugin.getLangConfig().getString("donation-form-java.title", "Donation"));
             Component amountLabel = MessageUtils.parseMessage(
-                    plugin.getLangConfig().getString("donation-form.amount-label", "Amount"));
+                    plugin.getLangConfig().getString("donation-form-java.amount-label", "Amount"));
             Component emailLabel = MessageUtils.parseMessage(
-                    plugin.getLangConfig().getString("donation-form.email-label", "Email"));
+                    plugin.getLangConfig().getString("donation-form-java.email-label", "Email"));
             Component methodLabel = MessageUtils.parseMessage(
-                    plugin.getLangConfig().getString("donation-form.method-label", "Payment Method"));
+                    plugin.getLangConfig().getString("donation-form-java.method-label", "Payment Method"));
             Component messageLabel = MessageUtils.parseMessage(
-                    plugin.getLangConfig().getString("donation-form.message-label", "Message (optional)"));
+                    plugin.getLangConfig().getString("donation-form-java.message-label", "Message (optional)"));
 
             Component submitLabel = MessageUtils.parseMessage(
-                    plugin.getLangConfig().getString("donation-form.submit-label", "Submit"));
+                    plugin.getLangConfig().getString("donation-form-java.submit-label", "Submit"));
             Component cancelLabel = MessageUtils.parseMessage(
-                    plugin.getLangConfig().getString("donation-form.cancel-label", "Cancel"));
+                    plugin.getLangConfig().getString("donation-form-java.cancel-label", "Cancel"));
 
             PaperMultiActionDialog dialog = dialogManager.createMultiActionDialog()
                     .title(title)
@@ -94,7 +94,7 @@ public class JavaDialogHandler {
                         boolean first = true;
                         for (String id : methodIds) {
                             Component displayName = MessageUtils.parseMessage(
-                                    plugin.getLangConfig().getString("donation-form.method-" + id, id.toUpperCase()));
+                                    plugin.getLangConfig().getString("donation-form-java.method-" + id, id.toUpperCase()));
                             soi.option(id, displayName, first);
                             first = false;
                         }
@@ -129,7 +129,7 @@ public class JavaDialogHandler {
                                           String email, String method, String message) {
         try {
             Component title = MessageUtils.parseMessage(
-                    plugin.getLangConfig().getString("donation-form.title", "Donation"));
+                    plugin.getLangConfig().getString("donation-form-java.confirm-title", "Confirm Donation"));
 
             // Build body text from donation placeholders
             Map<String, String> p = MessageUtils.getDonationPlaceholders(
@@ -146,9 +146,9 @@ public class JavaDialogHandler {
             Component bodyComponent = MessageUtils.parseMessage(bodyText);
 
             Component yesLabel = MessageUtils.parseMessage(
-                    plugin.getLangConfig().getString("donation-form.confirm-yes-label", "Confirm"));
+                    plugin.getLangConfig().getString("donation-form-java.confirm-yes-label", "Confirm"));
             Component noLabel = MessageUtils.parseMessage(
-                    plugin.getLangConfig().getString("donation-form.confirm-no-label", "Cancel"));
+                    plugin.getLangConfig().getString("donation-form-java.confirm-no-label", "Cancel"));
 
             final String confirmCommand = "donate " + hash;
 
